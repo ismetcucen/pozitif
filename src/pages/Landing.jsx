@@ -18,12 +18,11 @@ export default function Landing() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Madde: Üst Menü Linklerini Yönetme
   const navItems = [
     { label: 'Özellikler', path: '#features' },
     { label: 'Nasıl Çalışır?', path: '#how-it-works' },
     { label: 'Fiyatlandırma', path: '#pricing' },
-    { label: 'Blog', path: '/blog' } // Blog sayfası artık aktif!
+    { label: 'Blog', path: '/blog' }
   ];
 
   const handleNavClick = (path) => {
@@ -41,7 +40,7 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-[#0f172a] text-left selection:bg-primary/20 overflow-x-hidden">
       
-      {/* 1. GHOST NAVIGATION (Düzeltildi) */}
+      {/* 1. GHOST NAVIGATION */}
       <nav className={clsx(
         "fixed top-0 left-0 w-full z-[100] transition-all duration-500 py-6 px-10 flex items-center justify-between",
         scrolled ? "bg-slate-900/90 backdrop-blur-xl border-b border-white/5 py-4" : "bg-transparent"
@@ -55,18 +54,13 @@ export default function Landing() {
 
         <div className="hidden md:flex items-center gap-10">
            {navItems.map(item => (
-             <button 
-               key={item.label} 
-               onClick={() => handleNavClick(item.path)} 
-               className="text-[10px] font-black text-textMuted uppercase tracking-widest italic hover:text-white transition-colors"
-             >
-               {item.label}
-             </button>
+             <button key={item.label} onClick={() => handleNavClick(item.path)} className="text-[10px] font-black text-textMuted uppercase tracking-widest italic hover:text-white transition-colors">{item.label}</button>
            ))}
         </div>
 
         <div className="flex items-center gap-4">
-           <button onClick={() => navigate('/coach-login')} className="px-6 py-3 rounded-xl border border-white/10 text-white font-bold text-xs hover:bg-white/5 transition-all">EĞİTMEN GİRİŞİ</button>
+           {/* Madde: Koç Girişi Güncellemesi */}
+           <button onClick={() => navigate('/coach-login')} className="px-6 py-3 rounded-xl border border-white/10 text-white font-bold text-xs hover:bg-white/5 transition-all">KOÇ GİRİŞİ</button>
            <button onClick={() => navigate('/student-login')} className="px-10 py-4 rounded-xl bg-primary text-white font-black text-xs tracking-widest shadow-[0_0_30px_rgba(107,76,255,0.4)] hover:scale-105 transition-all uppercase italic">ÖĞRENCİ GİRİŞİ 🚀</button>
         </div>
       </nav>
@@ -88,14 +82,15 @@ export default function Landing() {
                <button onClick={() => navigate('/student-login')} className="w-full sm:w-[400px] py-9 rounded-[3rem] bg-primary text-white font-black text-xl uppercase tracking-[0.2em] shadow-[0_0_60px_rgba(107,76,255,0.6)] hover:scale-105 hover:bg-primaryHover transition-all italic flex items-center justify-center gap-4">
                   ÖĞRENCİ GİRİŞ YAP <ArrowRight className="w-8 h-8" />
                </button>
+               {/* Madde: Koç Portalı Güncellemesi */}
                <button onClick={() => navigate('/coach-login')} className="w-full sm:w-72 py-8 rounded-[3rem] bg-white/5 border border-white/10 text-white font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all italic opacity-60 hover:opacity-100">
-                  Eğitmen Portalı
+                  Koç Portalı
                </button>
             </div>
          </div>
       </section>
 
-      {/* 3. FEATURES (ID Eklendi) */}
+      {/* 3. FEATURES */}
       <section id="features" className="py-32 px-10 relative">
          <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
             {[
@@ -120,7 +115,8 @@ export default function Landing() {
             <h3 className="text-4xl md:text-5xl font-black text-white italic tracking-tighter uppercase leading-none text-center xl:text-left">Başarı İçin <br /> <span className="text-primary text-glow">Doğru Kapıdan</span> Başla.</h3>
             <div className="flex flex-wrap items-center justify-center gap-6">
                <button onClick={() => navigate('/student-login')} className="px-14 py-8 rounded-[3.5rem] bg-primary text-white font-black text-lg uppercase tracking-[0.3em] shadow-2xl hover:scale-110 transition-all italic border-b-8 border-primaryHover active:border-b-0 active:translate-y-2">ÖĞRENCİ GİRİŞİ</button>
-               <button onClick={() => navigate('/coach-login')} className="px-14 py-8 rounded-[3.5rem] bg-white/5 border border-white/10 text-white font-black text-lg uppercase tracking-[0.3em] hover:bg-white/10 transition-all italic border-b-8 border-white/10 active:border-b-0 active:translate-y-2">EĞİTMEN GİRİŞİ</button>
+               {/* Madde: Koç Girişi Güncellemesi */}
+               <button onClick={() => navigate('/coach-login')} className="px-14 py-8 rounded-[3.5rem] bg-white/5 border border-white/10 text-white font-black text-lg uppercase tracking-[0.3em] hover:bg-white/10 transition-all italic border-b-8 border-white/10 active:border-b-0 active:translate-y-2">KOÇ GİRİŞİ</button>
             </div>
          </div>
          <div className="mt-32 pt-10 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between opacity-30">

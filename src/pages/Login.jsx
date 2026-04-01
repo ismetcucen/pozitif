@@ -12,7 +12,6 @@ import {
 import clsx from 'clsx';
 
 export default function Login({ mode }) {
-  // Madde: Eğer mode belirtilmemişse seçim ekranını göster
   const [currentMode, setCurrentMode] = useState(mode || null);
   const isStudent = currentMode === 'student';
   
@@ -25,7 +24,6 @@ export default function Login({ mode }) {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // URL değiştikçe mode güncelle (Prop değişirse)
   useEffect(() => {
     if (mode) setCurrentMode(mode);
   }, [mode]);
@@ -45,7 +43,7 @@ export default function Login({ mode }) {
           throw new Error('Bu giriş sadece öğrencilere özeldir.');
         }
         if (!isStudent && !['coach', 'admin', 'super_admin', 'kurucu'].includes(userData?.role)) {
-          throw new Error('Bu giriş sadece eğitmenlere özeldir.');
+          throw new Error('Bu giriş sadece koçlara özeldir.');
         }
 
         if (['admin', 'super_admin', 'kurucu'].includes(userData?.role)) {
@@ -69,7 +67,7 @@ export default function Login({ mode }) {
            await setDoc(doc(db, 'pending_coaches', userCred.user.uid), {
              name, email, phone, type: 'coach_application', createdAt: new Date().toISOString()
            });
-           alert('Eğitmen başvurunuz alındı. Sistem yöneticisi onayı sonrası panelinize erişebilirsiniz.');
+           alert('Koç başvurunuz alındı. Sistem yöneticisi onayı sonrası panelinize erişebilirsiniz.');
         }
         setIsLogin(true);
       }
@@ -79,7 +77,6 @@ export default function Login({ mode }) {
     setLoading(false);
   };
 
-  // Madde: SEÇİM EKRANI (Mode yoksa)
   if (!currentMode) {
     return (
       <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-6 relative overflow-hidden">
@@ -88,7 +85,7 @@ export default function Login({ mode }) {
          
          <div className="w-full max-w-4xl text-center z-10 space-y-12 animate-fade-in">
             <div className="space-y-4">
-               <h1 className="text-5xl md:text-7xl font-black text-white italic tracking-tighter uppercase leading-none">Pozitif <span className="text-primary text-glow">Koç</span></h1>
+               <h1 className="text-5xl md:text-7xl font-black text-white italic tracking-tighter uppercase leading-none">Pozitif <span className="text-glow text-primary">Koç</span></h1>
                <p className="text-textMuted text-xl font-medium italic opacity-60 italic uppercase tracking-widest">Hangi Kapıdan Girmek İstersiniz?</p>
             </div>
 
@@ -97,9 +94,10 @@ export default function Login({ mode }) {
                   <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center"><Target className="w-10 h-10 text-white" /></div>
                   <span className="text-3xl font-black text-white italic uppercase tracking-tighter">ÖĞRENCİ GİRİŞİ</span>
                </button>
+               {/* Madde: Koç Girişi Güncellemesi */}
                <button onClick={() => setCurrentMode('coach')} className="p-16 bg-white/5 border border-white/10 border-b-8 border-white/10 rounded-[3.5rem] hover:bg-white/10 hover:scale-105 transition-all group flex flex-col items-center gap-6">
                   <div className="w-20 h-20 bg-white/5 rounded-2xl flex items-center justify-center"><Users className="w-10 h-10 text-white/40 group-hover:text-white" /></div>
-                  <span className="text-3xl font-black text-white/40 italic uppercase tracking-tighter group-hover:text-white">EĞİTMEN GİRİŞİ</span>
+                  <span className="text-3xl font-black text-white/40 italic uppercase tracking-tighter group-hover:text-white">KOÇ GİRİŞİ</span>
                </button>
             </div>
             
@@ -119,7 +117,6 @@ export default function Login({ mode }) {
 
       <div className="w-full max-w-6xl grid grid-cols-1 xl:grid-cols-2 bg-slate-900/40 backdrop-blur-3xl border border-white/5 rounded-[4rem] shadow-2xl relative z-10 overflow-hidden group">
         
-        {/* SOL PANEL: GİRİŞ FORMU */}
         <div className="p-12 xl:p-20 flex flex-col justify-center text-left">
            <div className="flex items-center gap-4 mb-12">
               <button onClick={() => setCurrentMode(null)} className="p-2 hover:bg-white/5 rounded-lg transition-colors mr-2">
@@ -132,10 +129,11 @@ export default function Login({ mode }) {
            </div>
 
            <div className="space-y-4 mb-10">
+              {/* Madde: Koç Girişi Güncellemesi */}
               <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight leading-none">
-                 {isLogin ? (isStudent ? 'Öğrenci Girişi' : 'Eğitmen Girişi') : (isStudent ? 'Öğrenci Kaydı' : 'Eğitmen Başvurusu')}
+                 {isLogin ? (isStudent ? 'Öğrenci Girişi' : 'Koç Girişi') : (isStudent ? 'Öğrenci Kaydı' : 'Koç Başvurusu')}
               </h1>
-              <p className="text-textMuted text-lg font-medium opacity-60 leading-relaxed">
+              <p className="text-textMuted text-lg font-medium opacity-60 leading-relaxed italic">
                  {isStudent ? 'Başarıya giden yolda dijital asistanın seni bekliyor.' : 'Öğrencilerinin geleceğini buradan inşa etmeye başla.'}
               </p>
            </div>
@@ -182,7 +180,7 @@ export default function Login({ mode }) {
                  </div>
               </div>
 
-              <button type="submit" disabled={loading} className="w-full py-6 rounded-[2.5rem] bg-primary text-white font-black text-xs uppercase tracking-[0.3em] shadow-[0_0_50px_rgba(107,76,255,0.4)] hover:scale-102 transition-all italic flex items-center justify-center gap-3">
+              <button type="submit" disabled={loading} className="w-full py-6 rounded-[2.5rem] bg-primary text-white font-black text-xs uppercase tracking-[0.3em] shadow-[0_0_50px_rgba(107,76,255,0.4)] hover:scale-102 transition-all italic flex items-center justify-center gap-3 active:scale-95">
                  {loading ? 'DİJİTAL KİMLİK KONTROL EDİLİYOR...' : (isLogin ? 'PANELİME GİRİŞ YAP' : 'BAŞVURUYU TAMAMLA')} <ArrowRight className="w-5 h-5" />
               </button>
            </form>
@@ -205,7 +203,7 @@ export default function Login({ mode }) {
                  {isStudent ? 'Gelecek \n Seni Bekliyor.' : 'Liderlik \n Zamanı.'}
               </h3>
               <p className="text-white/60 text-xl font-medium leading-relaxed max-w-sm italic">
-                 {isStudent ? 'AI destekli rehberlik ve anlık takip sistemimizle gerçek potansiyelini keşfetmeye hazır mısın?' : 'Eğitmen paneli üzerinden tüm öğrencilerinin gelişimini ve net analizlerini profesyonelce yönet.'}
+                 {isStudent ? 'AI destekli rehberlik ve anlık takip sistemimizle gerçek potansiyelini keşfetmeye hazır mısın?' : 'Koç paneli üzerinden tüm öğrencilerinin gelişimini ve net analizlerini profesyonelce yönet.'}
               </p>
            </div>
 

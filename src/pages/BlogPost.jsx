@@ -32,94 +32,94 @@ export default function BlogPost() {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen bg-[#0f172a]">
-       <div className="text-primary font-black uppercase tracking-[0.4em] italic animate-pulse">İÇERİK YÜKLENİYOR...</div>
+       <div className="text-primary font-black uppercase tracking-[0.2em] italic animate-pulse">İÇERİK YÜKLENİYOR...</div>
     </div>
   );
 
   if (!post) return (
     <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-10">
-       <div className="text-center italic text-white/20 font-black uppercase tracking-widest">MAKALEYE ULAŞILAMADI.</div>
+       <div className="text-center italic text-white/20 font-black uppercase tracking-widest uppercase">MAKALEYE ULAŞILAMADI.</div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-left p-6 space-y-12 animate-fade-in relative z-20 pb-32 selection:bg-primary/30">
-      
-      {/* 1. HEADER & NAVIGATION */}
-      <header className="max-w-7xl mx-auto flex flex-col xl:flex-row items-center justify-between gap-10">
-        <button onClick={() => navigate('/blog')} className="flex items-center gap-4 text-white/40 hover:text-white transition-all text-[11px] font-black uppercase tracking-widest italic group">
-           <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-primary group-hover:border-primary transition-all">
-              <ArrowLeft className="w-6 h-6" />
-           </div>
-           BLOG LİSTESİNE GERİ DÖN
-        </button>
+    <div className="min-h-screen bg-[#0f172a] text-left pb-32 selection:bg-primary/30">
+      <div className="max-w-7xl mx-auto px-6 space-y-12 animate-fade-in relative z-20">
         
-        <div className="flex items-center gap-8">
-           <div className="text-right">
-              <p className="text-[10px] font-black text-primary uppercase tracking-widest italic mb-1">YAYIN TARİHİ</p>
-              <p className="text-xl font-black text-white italic tracking-tighter uppercase">{post.createdAt ? new Date(post.createdAt).toLocaleDateString() : '—'}</p>
-           </div>
-           <button className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/30 hover:bg-primary hover:text-white transition-all shadow-xl">
-              <Share2 className="w-6 h-6" />
-           </button>
-        </div>
-      </header>
+        {/* 1. HEADER & NAVIGATION (Ortalandı & Küçültüldü) */}
+        <header className="pt-20 flex flex-col md:flex-row items-center justify-between gap-10">
+          <button onClick={() => navigate('/blog')} className="flex items-center gap-4 text-white/30 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest italic group">
+             <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:bg-primary group-hover:border-primary transition-all">
+                <ArrowLeft className="w-5 h-5" />
+             </div>
+             BLOG LİSTESİNE GERİ DÖN
+          </button>
+          
+          <div className="flex items-center gap-6">
+             <div className="text-center md:text-right">
+                <p className="text-[9px] font-black text-primary uppercase tracking-widest italic mb-1">YAYIN TARİHİ</p>
+                <p className="text-lg font-black text-white italic tracking-tighter uppercase">{post.createdAt ? new Date(post.createdAt).toLocaleDateString() : '—'}</p>
+             </div>
+             <button className="w-12 h-12 rounded-[1.5rem] bg-white/5 border border-white/10 flex items-center justify-center text-white/20 hover:bg-primary/20 hover:text-primary transition-all">
+                <Share2 className="w-5 h-5" />
+             </button>
+          </div>
+        </header>
 
-      {/* 2. COVER IMAGE */}
-      <div className="max-w-7xl mx-auto relative h-[400px] xl:h-[650px] rounded-[4rem] overflow-hidden group border border-white/10 shadow-2xl">
-         <img 
-            src={post.imageUrl || 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1200&q=80'} 
-            className="w-full h-full object-cover opacity-60"
-            alt={post.title}
-         />
-         <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/20 to-transparent" />
-         <div className="absolute bottom-0 left-0 p-12 xl:p-20">
-            <span className="px-6 py-2 rounded-xl bg-primary text-white text-[10px] font-black uppercase tracking-widest italic shadow-2xl mb-8 inline-block">#{post.category || 'REHBERLİK'}</span>
-            <h1 className="text-5xl md:text-7xl font-black text-white uppercase italic tracking-tighter leading-none">{post.title}</h1>
-         </div>
+        {/* 2. COVER IMAGE (Font Ayarı) */}
+        <div className="relative h-[350px] md:h-[500px] rounded-[3rem] overflow-hidden group border border-white/10 shadow-2xl">
+           <img 
+              src={post.imageUrl || 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1200&q=80'} 
+              className="w-full h-full object-cover opacity-50 transition-transform duration-1000 group-hover:scale-101"
+              alt={post.title}
+           />
+           <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/40 to-transparent" />
+           <div className="absolute bottom-0 left-0 p-10 md:p-16">
+              <span className="px-4 py-1.5 rounded-lg bg-primary text-white text-[9px] font-black uppercase tracking-widest italic mb-6 inline-block shadow-lg">#{post.category || 'REHBERLİK'}</span>
+              <h1 className="text-3xl md:text-5xl font-black text-white uppercase italic tracking-tighter leading-tight">{post.title}</h1>
+           </div>
       </div>
 
-      {/* 3. CONTENT AREA (Yüksek Kontrast & Maksimum Okunabilirlik) */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-4 gap-20">
+      {/* 3. CONTENT AREA (Okuma Genişliği Ortalandı & Metin Boyutu Ayarlandı) */}
+      <div className="max-w-4xl mx-auto space-y-16">
          
-         {/* SIDEBAR */}
-         <aside className="xl:col-span-1 space-y-8">
-            <div className="bg-surface/40 border border-white/5 p-10 rounded-[3rem] shadow-xl">
-               <div className="flex items-center gap-4 mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary"><Zap className="w-6 h-6" /></div>
-                  <h4 className="text-[11px] font-black text-white uppercase tracking-widest italic">Özet Çıkarım</h4>
-               </div>
-               <p className="text-white/60 text-sm font-medium italic leading-relaxed">{post.excerpt || 'Bu yazı için akıllı özet henüz hazırlanmamış.'}</p>
-            </div>
-
-            <div className="bg-white/5 border border-white/5 p-10 rounded-[3rem] text-center">
-               <p className="text-[10px] font-black text-secondary uppercase tracking-widest italic mb-4 opacity-50">OKUMA SÜRESİ</p>
-               <div className="flex items-center justify-center gap-4">
-                  <Clock className="w-8 h-8 text-secondary" />
-                  <span className="text-2xl font-black text-white italic tracking-tighter uppercase">~6 DAKİKA</span>
+         {/* SIDEBAR BİLGİ KARTLARI (Yatay ve Kompakt) */}
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-slate-900/50 border border-white/5 p-8 rounded-[2.5rem] shadow-xl flex items-center gap-6">
+               <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center text-primary shrink-0"><Zap className="w-6 h-6" /></div>
+               <div>
+                  <h4 className="text-[9px] font-black text-white uppercase tracking-widest italic opacity-40">ÖZET ÇIKARIM</h4>
+                  <p className="text-white/60 text-xs font-medium italic leading-relaxed">{post.excerpt || 'Hazırlanıyor...'}</p>
                </div>
             </div>
-         </aside>
+            <div className="bg-white/5 border border-white/5 p-8 rounded-[2.5rem] shadow-xl flex items-center gap-6">
+               <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-secondary shrink-0"><Clock className="w-6 h-6" /></div>
+               <div>
+                  <h4 className="text-[9px] font-black text-white uppercase tracking-widest italic opacity-40">OKUMA SÜRESİ</h4>
+                  <p className="text-xl font-black text-white italic tracking-tighter uppercase leading-none">~6 Dakika</p>
+               </div>
+            </div>
+         </div>
 
-         {/* MAIN ARTICLE (Düzeltildi: Italik Kalktı, Kontrast Arttı) */}
-         <article className="xl:col-span-3 bg-surface/30 border border-white/5 p-12 xl:p-20 rounded-[4rem] shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
+         {/* MAIN ARTICLE (Daha Okunaklı & Ortalanmış) */}
+         <article className="bg-slate-900/30 border border-white/5 p-8 md:p-16 rounded-[3.5rem] shadow-2xl relative">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] rounded-full pointer-events-none" />
             
             <div className="relative z-10">
-               {/* Madde: İçerik artık dik (non-italic) ve saf beyaz */}
-               <div className="text-slate-100 text-xl font-medium leading-[1.8] space-y-8 whitespace-pre-line">
+               {/* Madde: İçerik fontu hafif küçültüldü ve netlik korundu */}
+               <div className="text-slate-200 text-lg font-medium leading-[1.8] space-y-8 whitespace-pre-line">
                   {post.content || 'İçerik yükleniyor...'}
                </div>
             </div>
 
-            <div className="mt-20 pt-10 border-t border-white/5 flex flex-wrap gap-4">
+            <div className="mt-16 pt-8 border-t border-white/5 flex flex-wrap gap-3">
                {(post.tags || []).map((tag, i) => (
-                  <span key={i} className="px-5 py-2 rounded-xl bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest italic text-white/30 hover:text-white transition-all">#{tag}</span>
+                  <span key={i} className="px-4 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[9px] font-black uppercase tracking-widest italic text-white/30">#{tag}</span>
                ))}
             </div>
          </article>
       </div>
-
+      </div>
     </div>
   );
 }
