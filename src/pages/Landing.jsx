@@ -133,7 +133,7 @@ export default function Landing() {
             </div>
          </div>
 
-         {/* PREVIEW IMAGE: RESPONSIVE */}
+         {/* PREVIEW IMAGE */}
          <div className="relative z-10 mt-20 md:mt-32 max-w-[1200px] mx-auto p-2 md:p-4 bg-white border border-slate-200 rounded-saas-lg shadow-premium">
             <div className="bg-slate-50 rounded-saas overflow-hidden aspect-video flex items-center justify-center p-4">
                <div className="flex flex-col items-center gap-4 md:gap-6 opacity-30">
@@ -144,13 +144,13 @@ export default function Landing() {
          </div>
       </section>
 
-      {/* 3. SaaS FEATURES: RESPONSIVE GRID */}
+      {/* 3. SaaS FEATURES */}
       <section id="features" className="py-20 md:py-32 px-6 md:px-10 bg-slate-50 border-t border-slate-200">
          <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
             {[
-              { title: 'Yapay Zeka Analizi', desc: 'Deneme sonuçlarını milimetrik analiz eden algoritma.', icon: Bot, color: 'bg-blue-50 text-primary border-blue-100' },
-              { title: 'Anlık Takip Radarı', desc: 'Koçunun her an yanında olduğunu güvenle hisset.', icon: Clock, color: 'bg-orange-50 text-warning border-orange-100' },
-              { title: 'Strateji Kütüphanesi', desc: 'Rehberlik içerikleriyle dolu zengin bir dijital kaynak.', icon: Zap, color: 'bg-purple-50 text-secondary border-purple-100' },
+              { title: "Yapay Zeka Analizi", desc: "Deneme sonuçlarını milimetrik analiz eden algoritma.", icon: Bot, color: "bg-blue-50 text-primary border-blue-100" },
+              { title: "Anlık Takip Radarı", desc: "Koçunun her an yanında olduğunu güvenle hisset.", icon: Clock, color: "bg-orange-50 text-warning border-orange-100" },
+              { title: "Strateji Kütüphanesi", desc: "Rehberlik içerikleriyle dolu zengin bir dijital kaynak.", icon: Zap, color: "bg-purple-50 text-secondary border-purple-100" },
             ].map((feat, i) => (
               <div key={i} className="bg-white border border-slate-200 p-8 md:p-10 rounded-saas shadow-soft hover:shadow-premium hover:-translate-y-2 transition-all flex flex-col items-center text-center">
                  <div className={clsx("w-14 h-14 md:w-16 md:h-16 rounded-[1.25rem] border flex items-center justify-center mb-6 md:mb-8", feat.color)}>
