@@ -153,27 +153,27 @@ export default function Landing() {
               { title: 'Strateji Kütüphanesi', desc: 'Rehberlik içerikleriyle dolu zengin bir dijital kaynak.', icon: Zap, color: 'bg-purple-50 text-secondary border-purple-100' },
             ].map((feat, i) => (
               <div key={i} className="bg-white border border-slate-200 p-8 md:p-10 rounded-saas shadow-soft hover:shadow-premium hover:-translate-y-2 transition-all flex flex-col items-center text-center">
-                 <div className={clsx(\"w-14 h-14 md:w-16 md:h-16 rounded-[1.25rem] border flex items-center justify-center mb-6 md:mb-8\", feat.color)}>
-                    <feat.icon className=\"w-6 h-6 md:w-8 md:h-8\" />
+                 <div className={clsx("w-14 h-14 md:w-16 md:h-16 rounded-[1.25rem] border flex items-center justify-center mb-6 md:mb-8", feat.color)}>
+                    <feat.icon className="w-6 h-6 md:w-8 md:h-8" />
                  </div>
-                 <h3 className=\"text-lg md:text-xl font-bold text-textPrimary uppercase tracking-tighter mb-4\">{feat.title}</h3>
-                 <p className=\"text-textSecondary text-xs md:text-sm font-medium leading-relaxed\">{feat.desc}</p>
+                 <h3 className="text-lg md:text-xl font-bold text-textPrimary uppercase tracking-tighter mb-4">{feat.title}</h3>
+                 <p className="text-textSecondary text-xs md:text-sm font-medium leading-relaxed">{feat.desc}</p>
               </div>
             ))}
          </div>
       </section>
 
       {/* 4. MODERN CTA FOOTER */}
-      <footer className=\"py-20 md:py-32 px-6 md:px-10 bg-white border-t border-slate-200 relative\">
-         <div className=\"max-w-[1400px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-12 md:gap-16\">
-            <h3 className=\"text-3xl md:text-5xl font-black text-textPrimary tracking-tighter uppercase leading-none text-center xl:text-left\">Başarı İçin <br /> <span className=\"text-primary italic\">Doğru Kapıdan</span> Başla.</h3>
-            <div className=\"flex flex-col sm:flex-row items-center justify-center gap-4 w-full md:w-auto\">
-               <button onClick={() => navigate('/student-login')} className=\"w-full md:w-auto px-14 py-6 md:py-8 rounded-saas bg-primary text-white font-bold text-lg uppercase tracking-widest shadow-button hover:bg-primaryHover transition-all text-center\">ÖĞRENCİ GİRİŞİ</button>
-               <button onClick={() => navigate('/coach-login')} className=\"w-full md:w-auto px-14 py-6 md:py-8 rounded-saas bg-slate-100 text-textSecondary font-bold text-lg uppercase tracking-widest hover:bg-slate-200 transition-all text-center\">KOÇ GİRİŞİ</button>
+      <footer className="py-20 md:py-32 px-6 md:px-10 bg-white border-t border-slate-200 relative">
+         <div className="max-w-[1400px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-12 md:gap-16">
+            <h3 className="text-3xl md:text-5xl font-black text-textPrimary tracking-tighter uppercase leading-none text-center xl:text-left">Başarı İçin <br /> <span className="text-primary italic">Doğru Kapıdan</span> Başla.</h3>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full md:w-auto">
+               <button onClick={() => navigate('/student-login')} className="w-full md:w-auto px-14 py-6 md:py-8 rounded-saas bg-primary text-white font-bold text-lg uppercase tracking-widest shadow-button hover:bg-primaryHover transition-all text-center">ÖĞRENCİ GİRİŞİ</button>
+               <button onClick={() => navigate('/coach-login')} className="w-full md:w-auto px-14 py-6 md:py-8 rounded-saas bg-slate-100 text-textSecondary font-bold text-lg uppercase tracking-widest hover:bg-slate-200 transition-all text-center">KOÇ GİRİŞİ</button>
             </div>
          </div>
-         <div className=\"mt-20 md:mt-32 pt-10 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between opacity-50 gap-4 text-center sm:text-left\">
-            <p className=\"text-[10px] font-bold text-textSecondary uppercase tracking-widest italic\">© 2026 Pozitif Koç. Tüm Hakları Saklıdır.</p>
+         <div className="mt-20 md:mt-32 pt-10 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between opacity-50 gap-4 text-center sm:text-left">
+            <p className="text-[10px] font-bold text-textSecondary uppercase tracking-widest italic">© 2026 Pozitif Koç. Tüm Hakları Saklıdır.</p>
          </div>
       </footer>
 

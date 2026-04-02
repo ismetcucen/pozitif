@@ -73,7 +73,7 @@ export default function CoachDashboardHome() {
         </div>
       </header>
 
-      {/* 2. ANA İSTATİSTİK KARTLARI (Responsive Grid) */}
+      {/* 2. ANA İSTATİSTİK KARTLARI */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {[
           { label: 'TOPLAM ÖĞRENCİ', value: totalStudents, icon: Users, color: 'text-primary', bg: 'bg-blue-50 border-blue-100' },
