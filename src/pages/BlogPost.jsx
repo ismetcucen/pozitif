@@ -3,7 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { 
-  ArrowLeft, Share2, Zap, Clock, ShieldCheck, ArrowRight
+  ArrowLeft, Calendar, User, 
+  Share2, MessageSquare, Clock,
+  BookOpen, Sparkles, Tag, ChevronLeft
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -15,105 +17,123 @@ export default function BlogPost() {
 
   useEffect(() => {
     const fetchPost = async () => {
-      try {
-        const docRef = doc(db, 'blogPosts', id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setPost({ id: docSnap.id, ...docSnap.data() });
-        }
-      } catch (err) { console.error(err); }
+      const docSnap = await getDoc(doc(db, 'blogPosts', id));
+      if (docSnap.exists()) setPost({ id: docSnap.id, ...docSnap.data() });
       setLoading(false);
     };
     fetchPost();
   }, [id]);
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-screen bg-background text-primary font-bold uppercase tracking-widest animate-pulse">
-       İÇERİK YÜKLENİYOR...
+    <div className="min-h-screen bg-background flex items-center justify-center p-6 text-primary font-bold uppercase tracking-widest animate-pulse italic">
+       MAKALE HAZIRLANIYOR...
     </div>
   );
 
   if (!post) return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-10 text-center">
-       <div className="saas-card p-12 text-lg font-bold text-textMuted uppercase tracking-widest uppercase">MAKALEYE ULAŞILAMADI.</div>
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center space-y-8">
+       <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-soft border border-slate-200">
+          <BookOpen className="w-10 h-10 text-slate-300" />
+       </div>
+       <h1 className="text-3xl font-black text-slate-900 uppercase italic">YAZI BULUNAMADI</h1>
+       <button onClick={() => navigate('/blog')} className="px-10 py-5 bg-primary text-white font-black text-xs uppercase tracking-widest rounded-saas shadow-button">BLOG'A DÖN</button>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-background text-left pb-32 selection:bg-primary/20">
-      <div className="max-w-7xl mx-auto px-6 space-y-12 animate-fade-in relative z-20">
+    <div className="min-h-screen bg-slate-50 relative overflow-hidden py-12 md:py-24 px-4 md:px-10 selection:bg-primary/20">
+      
+      {/* DEKORATİF ARKA PLAN */}
+      <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-white via-transparent to-transparent opacity-50 z-0" />
+      
+      <div className="max-w-4xl mx-auto relative z-10">
         
-        {/* 1. SaaS NAVIGATION */}
-        <header className="pt-20 flex flex-col md:flex-row items-center justify-between gap-10">
-          <button onClick={() => navigate('/blog')} className="flex items-center gap-4 text-textSecondary hover:text-primary transition-all text-xs font-bold uppercase tracking-widest group">
-             <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all shadow-soft">
-                <ArrowLeft className="w-5 h-5" />
-             </div>
-             BLOG LİSTESİNE GERİ DÖN
-          </button>
-          
-          <div className="flex items-center gap-6">
-             <div className="text-center md:text-right">
-                <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1 shadow-soft inline-block px-2 bg-blue-50 rounded">YAYIN TARİHİ</p>
-                <p className="text-lg font-black text-textPrimary tracking-tighter uppercase">{post.createdAt ? new Date(post.createdAt).toLocaleDateString() : '—'}</p>
-             </div>
-             <button className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-300 hover:bg-slate-100 hover:text-primary transition-all shadow-soft group">
-                <Share2 className="w-5 h-5" />
-             </button>
-          </div>
-        </header>
+        {/* GERİ DÖN & PAYLAŞ */}
+        <div className="flex items-center justify-between mb-8 md:mb-12">
+           <button 
+             onClick={() => navigate('/blog')}
+             className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white border border-slate-200 text-slate-500 font-bold text-xs uppercase tracking-widest hover:text-primary hover:border-primary/30 transition-all shadow-soft group"
+           >
+              <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> BLOG'A DÖN
+           </button>
+           <button className="p-3 rounded-full bg-white border border-slate-200 text-slate-400 hover:text-primary transition-all shadow-soft active:scale-90">
+              <Share2 className="w-5 h-5" />
+           </button>
+        </div>
 
-        {/* 2. COVER IMAGE */}
-        <div className="relative h-[350px] md:h-[500px] rounded-saas-lg overflow-hidden group border border-slate-200 shadow-premium">
-           <img 
-              src={post.imageUrl || 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1200&q=80'} 
-              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-101"
-              alt={post.title}
-           />
-           <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-slate-900/20 to-transparent" />
-           <div className="absolute bottom-0 left-0 p-10 md:p-16 w-full">
-              <span className="px-4 py-1.5 rounded-lg bg-primary text-white text-[10px] font-bold uppercase tracking-widest mb-6 inline-block shadow-button">#{post.category || 'REHBERLİK'}</span>
-              <h1 className="text-3xl md:text-5xl font-black text-white uppercase italic tracking-tighter leading-tight drop-shadow-xl">{post.title}</h1>
+        <article className="bg-white border border-slate-200 rounded-saas-lg shadow-premium overflow-hidden animate-slide-up">
+           
+           {/* HEADER AREA */}
+           <div className="p-8 md:p-16 border-b border-slate-100 bg-slate-50/30">
+              <div className="flex flex-wrap items-center gap-4 mb-8 md:mb-10 text-[10px] md:text-sm font-bold text-slate-400 uppercase tracking-[0.2em]">
+                 <span className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-200 shadow-soft">
+                    <Calendar className="w-4 h-4 text-primary" /> 
+                    {post.createdAt?.toDate ? post.createdAt.toDate().toLocaleDateString('tr-TR') : '31.03.2026'}
+                 </span>
+                 <span className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-200 shadow-soft">
+                    <Tag className="w-4 h-4 text-secondary" /> {post.category || 'REHBERLİK'}
+                 </span>
+                 <span className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-200 shadow-soft">
+                    <Clock className="w-4 h-4 text-warning" /> 5 DK OKUMA
+                 </span>
+              </div>
+              <h1 className="text-3xl md:text-6xl font-black text-slate-900 tracking-tighter leading-tight uppercase italic mb-8 md:mb-10">
+                 {post.title}
+              </h1>
+              <div className="flex items-center gap-4 pt-8 border-t border-slate-200/50">
+                 <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white text-xl font-black italic shadow-button">P</div>
+                 <div>
+                    <div className="text-sm font-black text-slate-900 uppercase">Pozitif Koç</div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Akademi Yazarı</div>
+                 </div>
+              </div>
            </div>
+
+           {/* CONTENT AREA */}
+           <div className="p-8 md:p-20">
+              <div className="prose prose-slate prose-lg md:prose-xl max-w-none text-slate-700 leading-relaxed font-medium">
+                 {post.content?.split('\n').map((line, i) => (
+                   <p key={i} className="mb-8 md:mb-10 first-letter:text-4xl first-letter:font-black first-letter:text-primary first-letter:mr-1 first-letter:float-left first-letter:mt-1">
+                      {line}
+                   </p>
+                 ))}
+              </div>
+              
+              {/* ALT AKSİYONLAR */}
+              <div className="mt-20 pt-16 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-10">
+                 <div className="flex items-center gap-6">
+                    <button className="flex items-center gap-3 text-slate-400 hover:text-red-500 transition-all font-black text-xs uppercase tracking-widest group">
+                       <MessageSquare className="w-6 h-6 group-hover:scale-110 transition-transform" /> YORUM YAP
+                    </button>
+                 </div>
+                 <div className="flex items-center gap-4">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic opacity-50">DİĞER YAZILARA GÖZ AT</span>
+                    <button onClick={() => navigate('/blog')} className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-primary hover:bg-primary hover:text-white transition-all shadow-soft group">
+                       <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform rotate-180" />
+                    </button>
+                 </div>
+              </div>
+           </div>
+
+        </article>
+
+        {/* ALTCTA: ÖĞRENCİ PANELİ */}
+        <div className="mt-20 p-10 md:p-14 bg-slate-900 rounded-saas-lg shadow-premium text-center relative overflow-hidden group">
+           <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+           <div className="relative z-10 space-y-8">
+              <h3 className="text-2xl md:text-3xl font-black text-white tracking-tighter uppercase leading-none italic">BAŞARIYI <span className="text-primary not-italic opacity-100 uppercase italic">ŞANSA BIRAKMA</span></h3>
+              <p className="text-slate-400 font-medium text-sm md:text-base opacity-70">En güncel stratejiler ve analizlerle hedeflerine hemen ulaş.</p>
+              <button 
+                onClick={() => navigate('/student-login')}
+                className="px-10 py-5 bg-white text-primary rounded-saas font-black text-xs uppercase tracking-widest shadow-premium hover:shadow-glow hover:-translate-y-1 transition-all"
+              >
+                 ÜCRETSİZ BAŞLA
+              </button>
+           </div>
+        </div>
+
       </div>
 
-      {/* 3. CONTENT AREA */}
-      <div className="max-w-4xl mx-auto space-y-12">
-         
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white border border-slate-200 p-8 rounded-saas shadow-soft flex items-center gap-6 group hover:border-primary/30 transition-all">
-               <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-primary shadow-soft"><Zap className="w-6 h-6" /></div>
-               <div>
-                  <h4 className="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">ÖZET ÇIKARIM</h4>
-                  <p className="text-textSecondary text-xs font-semibold italic leading-relaxed">{post.excerpt || 'Hazırlanıyor...'}</p>
-               </div>
-            </div>
-            <div className="bg-slate-50 border border-slate-200 p-8 rounded-saas shadow-soft flex items-center gap-6 group hover:border-primary/30 transition-all">
-               <div className="w-12 h-12 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-warning shadow-soft"><Clock className="w-6 h-6" /></div>
-               <div>
-                  <h4 className="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">OKUMA SÜRESİ</h4>
-                  <p className="text-xl font-bold text-textPrimary tracking-tighter uppercase leading-none italic">~6 Dakika</p>
-               </div>
-            </div>
-         </div>
-
-         <article className="bg-white border border-slate-200 p-8 md:p-20 rounded-saas-lg shadow-premium relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/2 opacity-0 group-hover:opacity-100 blur-[80px] rounded-full transition-opacity duration-1000 pointer-events-none" />
-            
-            <div className="relative z-10">
-               <div className="text-textPrimary text-lg font-medium leading-[1.8] space-y-8 whitespace-pre-line">
-                  {post.content || 'İçerik yükleniyor...'}
-               </div>
-            </div>
-
-            <div className="mt-20 pt-10 border-t border-slate-100 flex flex-wrap gap-3">
-               {(post.tags || []).map((tag, i) => (
-                  <span key={i} className="px-4 py-2 rounded-xl bg-slate-50 border border-slate-100 text-[10px] font-bold uppercase tracking-widest text-textMuted hover:bg-white hover:text-primary hover:border-primary transition-all">#{tag}</span>
-               ))}
-            </div>
-         </article>
-      </div>
-      </div>
     </div>
   );
 }
