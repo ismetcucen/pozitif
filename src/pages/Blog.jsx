@@ -65,7 +65,7 @@ export default function Blog() {
           </div>
         </header>
 
-        {/* 2. FEATURED POST: SaaS STYLE */}
+        {/* 2. FEATURED POST */}
         {featured && !search && (
           <div 
             onClick={() => navigate(`/blog/${featured.id}`)}
@@ -89,7 +89,7 @@ export default function Blog() {
           </div>
         )}
 
-        {/* 3. REGULAR POSTS GRID: CLEAN SaaS CARDS */}
+        {/* 3. REGULAR POSTS GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
            {filtered.map(post => (
              <div 
