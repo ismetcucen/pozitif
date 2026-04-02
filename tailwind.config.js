@@ -7,23 +7,38 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#0f172a', // Slate-900 (Karanlık Arka Plan)
-        surface: '#1e293b',    // Slate-800 (Birincil Kart Zemini)
-        surfaceHover: '#334155', // Slate-700
-        primary: '#6b4cff',    // Orijinal Pozitif Koç Moru (Daha modern)
-        primaryHover: '#5a3de0',
-        secondary: '#0ea5e9',  // Turkuaz / Gök Mavisi (Kontrast İçin)
-        text: '#ffffff',       // Tam Beyaz (Karanlıkta Netlik)
-        textMuted: '#94a3b8',  // Gümüş Gri
-        border: '#334155',     // Slate-700 Sınır Çizgileri
+        // SaaS Tarzı Yeni Renk Paleti
+        primary: "#3b82f6", // Soft Blue
+        primaryHover: "#2563eb",
+        secondary: "#8b5cf6", // Soft Purple
+        success: "#10b981", 
+        warning: "#f59e0b",
+        danger: "#ef4444",
+        
+        // Arka Plan Renkleri (Açık Tema)
+        surface: "#ffffff",
+        background: "#f8fafc",
+        section: "#f1f5f9",
+        
+        // Metin Renkleri
+        textPrimary: "#0f172a", // Slate 900
+        textSecondary: "#64748b", // Slate 500
+        textMuted: "#94a3b8", // Slate 400
+        
+        borderLight: "#e2e8f0",
       },
-      fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+      borderRadius: {
+        'saas': '16px',
+        'saas-lg': '24px',
+      },
+      boxShadow: {
+        'soft': '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)',
+        'premium': '0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.05)',
+        'button': '0 4px 14px 0 rgba(59, 130, 246, 0.39)',
       },
       animation: {
-        'fade-in': 'fadeIn 0.5s ease-out',
-        'slide-up': 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'fade-in': 'fadeIn 0.5s ease-out forwards',
+        'slide-up': 'slideUp 0.6s ease-out forwards',
       },
       keyframes: {
         fadeIn: {
@@ -31,10 +46,10 @@ export default {
           '100%': { opacity: '1' },
         },
         slideUp: {
-          '0%': { transform: 'translateY(20px)', opacity: '0' },
-          '100%': { transform: 'translateY(0)', opacity: '1' },
-        }
-      }
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
     },
   },
   plugins: [],

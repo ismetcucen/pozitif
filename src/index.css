@@ -6,42 +6,40 @@
 
 @layer base {
   body {
-    @apply bg-background text-white font-sans antialiased selection:bg-primary/30;
+    @apply bg-background text-textPrimary font-sans antialiased selection:bg-primary/20;
   }
 }
 
 @layer utilities {
-  .glass-panel {
-    @apply bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl;
+  /* Modern SaaS Card */
+  .saas-card {
+    @apply bg-surface border border-slate-200 rounded-saas shadow-soft hover:shadow-premium transition-all duration-300;
   }
   
-  .glass-card {
-    @apply bg-slate-800/40 backdrop-blur-md border border-white/5 rounded-xl hover:bg-slate-800/60 hover:border-primary/40 transition-all duration-300;
+  /* Modern SaaS Section */
+  .saas-panel {
+    @apply bg-surface border border-slate-200 rounded-saas-lg shadow-premium;
   }
   
-  .text-glow {
-    text-shadow: 0 0 15px theme('colors.primary / 40%');
-  }
-  
-  .gradient-text {
-    @apply text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary;
+  /* Header Glow (Subtle) */
+  .text-glow-soft {
+    text-shadow: 0 0 10px theme('colors.primary / 15%');
   }
 }
 
-/* Custom Scrollbar (Dark) */
+/* Custom Scrollbar (Light & Minimal) */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #cbd5e1; /* Slate 300 */
   border-radius: 20px;
-  border: 2px solid #0f172a;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #94a3b8; /* Slate 400 */
 }
 
 @keyframes fadeIn {
@@ -50,14 +48,14 @@
 }
 
 @keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
+  from { transform: translateY(15px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
+  animation: fadeIn 0.4s ease-out forwards;
 }
 
 .animate-slide-up {
-  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

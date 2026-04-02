@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { db } from '../../firebase';
 import { collection, onSnapshot, query, orderBy, updateDoc, setDoc, doc, addDoc, where } from 'firebase/firestore';
 import {
-  CheckCircle, Target, Calendar, CheckSquare, Link, BookOpen, Play, Square, Timer, Award, Zap, Layers, User, ChevronDown, Clock, TrendingUp, Sparkles, X
+  CheckCircle, Target, Calendar, CheckSquare, Link, BookOpen, Play, Square, Timer, Award, Zap, Layers, User, ChevronDown, Clock, TrendingUp, Sparkles, X, ArrowRight
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import clsx from 'clsx';
@@ -44,7 +44,7 @@ export default function StudentDashboard() {
     });
 
     const unsubSelf = onSnapshot(doc(db, 'studentSelfAssessment', currentUser.uid), snap => {
-      setSelfAssessments(snap.exists() ? snap.data() : {});
+      setSelfAssessments(snap.exists() ? snap.data() : { ...selfAssessments });
     });
 
     const unsubStudent = onSnapshot(doc(db, 'students', currentUser.uid), snap => {
@@ -98,106 +98,113 @@ export default function StudentDashboard() {
     return `${h > 0 ? h + ':' : ''}${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
   };
 
-  if (loading) return <div className="min-h-screen bg-[#0f172a] flex items-center justify-center text-white font-black italic tracking-widest uppercase animate-pulse">VERİLER YÜKLENİYOR...</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+       <div className="text-primary font-bold uppercase tracking-widest animate-pulse">VERİLER YÜKLENİYOR...</div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-left p-2 sm:p-6 space-y-10 animate-fade-in relative z-20 pb-32">
+    <div className="space-y-10 animate-slide-up pb-20 text-left bg-background pt-10">
       
-      {/* 1. ÜST BİLGİ ALANLARI (Yüksek Kontrastlı) */}
+      {/* 1. ÜST BİLGİ ALANLARI */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
          {/* YKS SAYAÇ */}
-         <div className="xl:col-span-2 bg-surface/40 border border-primary/20 p-10 rounded-[3rem] flex items-center justify-between group shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[80px] rounded-full" />
-            <div className="relative z-10 flex items-center gap-10">
-               <div className="text-center bg-slate-900 border-2 border-primary/30 w-32 h-32 rounded-[2.5rem] flex flex-col items-center justify-center shadow-inner">
-                  <div className="text-5xl font-black text-white italic tracking-tighter leading-none">{daysToYKS}</div>
-                  <div className="text-[10px] text-primary font-black uppercase tracking-widest mt-2">GÜN KALDI</div>
+         <div className="xl:col-span-2 bg-white border border-slate-200 p-10 rounded-saas shadow-soft flex items-center justify-between group overflow-hidden">
+            <div className="flex items-center gap-10">
+               <div className="text-center bg-blue-50 border-2 border-primary/10 w-32 h-32 rounded-saas shadow-soft flex flex-col items-center justify-center">
+                  <div className="text-5xl font-black text-primary tracking-tighter leading-none">{daysToYKS}</div>
+                  <div className="text-[10px] text-primary/60 font-bold uppercase tracking-widest mt-2">GÜN KALDI</div>
                </div>
                <div>
-                  <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter mb-2">YKS GERİ SAYIMI 🎯</h2>
-                  <p className="text-textMuted text-lg font-medium opacity-60 italic leading-none">Dijital masanda hedeflerine bugün ne kadar yaklaştın?</p>
+                  <h2 className="text-3xl font-black text-textPrimary uppercase tracking-tighter mb-2 italic">YKS GERİ SAYIMI 🎯</h2>
+                  <p className="text-textSecondary text-lg font-medium">Hedeflerine her gün bir adım daha yaklaş.</p>
                </div>
             </div>
          </div>
 
          {/* HEDEF ÜNİVERSİTE */}
-         <div className="bg-surface/40 border border-secondary/20 p-10 rounded-[3rem] flex flex-col justify-center group shadow-2xl relative overflow-hidden">
-            <div className="relative z-10 space-y-4">
-               <h3 className="text-sm font-black text-secondary uppercase tracking-[0.2em] italic mb-2 flex items-center gap-2">
-                  <Target className="w-5 h-5" /> HAYALİNDEKİ HEDEF
+         <div className="bg-white border border-slate-200 p-10 rounded-saas flex flex-col justify-center shadow-soft relative overflow-hidden group">
+            <div className="space-y-4">
+               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2 group-hover:text-primary transition-colors">
+                  <Target className="w-5 h-5 text-secondary" /> HAYALİNDEKİ HEDEF
                </h3>
-               <div className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none border-b border-white/5 pb-2">{targetUni || 'Üniversite Belirtilmedi'}</div>
-               <div className="text-lg font-black text-white/50 italic tracking-tighter uppercase leading-none">{targetDept || 'Bölüm Belirtilmedi'}</div>
+               <div className="text-2xl font-black text-textPrimary uppercase tracking-tighter italic border-l-4 border-secondary pl-4">{targetUni || 'Üniversite Belirlenmedi'}</div>
+               <div className="text-lg font-bold text-textSecondary uppercase tracking-tighter pl-4">{targetDept || 'Bölüm Belirlenmedi'}</div>
             </div>
          </div>
       </div>
 
-      {/* 2. ÇALIŞMA MASASI (KRONOMETRE) - DEVASA ve NET */}
-      <div className={clsx("p-12 rounded-[4rem] border-2 flex flex-col xl:flex-row items-center justify-between gap-10 transition-all shadow-[0_0_100px_rgba(0,0,0,0.5)]", isStudying ? "bg-emerald-500/10 border-emerald-400/40" : "bg-surface/60 border-white/5")}>
-         <div className="flex items-center gap-8">
-            <div className={clsx("w-24 h-24 rounded-[2rem] flex items-center justify-center transition-all", isStudying ? "bg-emerald-400 text-white animate-pulse" : "bg-slate-900 text-white/20 border border-white/5")}>
-               <Timer className="w-12 h-12" />
-            </div>
-            <div>
-               <h3 className="text-4xl font-black text-white uppercase italic tracking-tighter mb-2">Çalışma Masası</h3>
-               <div className="flex items-center gap-3">
-                  <div className={clsx("w-3 h-3 rounded-full", isStudying ? "bg-emerald-400 animate-ping" : "bg-slate-700")} />
-                  <span className={clsx("text-xs font-black uppercase tracking-widest italic", isStudying ? "text-emerald-400" : "text-white/20")}>
-                    {isStudying ? `${studySubject} ÇALIŞIYOR` : 'MASA ŞU AN BOŞ'}
-                  </span>
+      {/* 2. ÇALIŞMA MASASI (KRONOMETRE) - SaaS STYLE */}
+      <div className={clsx("p-12 rounded-saas-lg border transition-all shadow-premium", isStudying ? "bg-emerald-50 border-emerald-200" : "bg-white border-slate-200")}>
+         <div className="flex flex-col xl:flex-row items-center justify-between gap-10">
+            <div className="flex items-center gap-8">
+               <div className={clsx("w-20 h-20 rounded-saas border flex items-center justify-center transition-all shadow-soft", isStudying ? "bg-white text-emerald-500 border-emerald-200 animate-pulse" : "bg-slate-50 text-slate-300 border-slate-100")}>
+                  <Timer className="w-10 h-10" />
+               </div>
+               <div>
+                  <h3 className="text-2xl font-black text-textPrimary uppercase tracking-tighter mb-2 italic underline decoration-primary/30 underline-offset-4">Çalışma Masası</h3>
+                  <div className="flex items-center gap-2">
+                     <div className={clsx("w-2.5 h-2.5 rounded-full", isStudying ? "bg-emerald-500 animate-ping" : "bg-slate-300")} />
+                     <span className={clsx("text-xs font-bold uppercase tracking-widest", isStudying ? "text-emerald-600" : "text-slate-400")}>
+                       {isStudying ? `${studySubject} ÇALIŞIYOR` : 'MOLA VERİLİYOR'}
+                     </span>
+                  </div>
                </div>
             </div>
-         </div>
 
-         <div className="flex flex-col md:flex-row items-center gap-8 w-full xl:w-auto">
-            <div className="text-7xl font-black text-white font-mono tracking-tighter bg-slate-900 px-10 py-5 rounded-[2.5rem] border border-white/10 shadow-inner min-w-[280px] text-center">
-               {formatTime(studyTime)}
-            </div>
-            
-            <div className="flex flex-col gap-4 w-full md:w-auto">
-               <div className="flex gap-2">
-                  <input type="time" value={studyEndTime} onChange={e => setStudyEndTime(e.target.value)} className="bg-slate-900 border border-white/5 text-white font-black text-xs p-4 rounded-xl outline-none focus:border-emerald-400 italic w-32" disabled={isStudying} title="Bitiş Saati" />
-                  <select value={studySubject} onChange={e => setStudySubject(e.target.value)} className="flex-1 bg-slate-900 border border-white/5 text-white font-black text-xs p-4 rounded-xl outline-none focus:border-emerald-400 italic appearance-none md:w-48" disabled={isStudying}>
-                     {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
+            <div className="flex flex-col lg:flex-row items-center gap-6 w-full xl:w-auto">
+               <div className="text-6xl font-black text-textPrimary font-mono tracking-tighter bg-white px-10 py-5 rounded-saas border border-slate-200 shadow-soft min-w-[250px] text-center">
+                  {formatTime(studyTime)}
                </div>
-               <button onClick={toggleStudy} className={clsx("w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] italic transition-all shadow-2xl", isStudying ? "bg-rose-600 text-white hover:scale-105" : "bg-emerald-500 text-white hover:scale-105")}>
-                  {isStudying ? 'ÇALIŞMAYI TAMAMLA' : 'MASAYA OTUR 🚀'}
-               </button>
+               
+               <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                  {!isStudying && (
+                    <>
+                      <input type="time" value={studyEndTime} onChange={e => setStudyEndTime(e.target.value)} className="bg-slate-50 border border-slate-200 text-textPrimary font-bold text-xs p-4 rounded-xl outline-none focus:border-primary focus:bg-white transition-all w-32 shadow-soft" title="Bitiş Vakti" />
+                      <select value={studySubject} onChange={e => setStudySubject(e.target.value)} className="bg-slate-50 border border-slate-200 text-textPrimary font-bold text-xs p-4 rounded-xl outline-none focus:border-primary focus:bg-white transition-all w-48 shadow-soft">
+                        {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </>
+                  )}
+                  <button onClick={toggleStudy} className={clsx("px-12 py-5 rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-button text-white", isStudying ? "bg-danger hover:bg-red-600" : "bg-success hover:bg-emerald-600")}>
+                     {isStudying ? 'Çalışmayı BİTİR' : 'MASAYA OTUR'}
+                  </button>
+               </div>
             </div>
          </div>
       </div>
 
-      {/* 3. KONU ANALİZİ (Yüksek Kontrastlı Akordeon) */}
-      <div className="bg-surface/40 border border-white/5 p-10 rounded-[3rem] shadow-2xl">
-         <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter flex items-center gap-4 mb-10 pb-6 border-b border-white/5">
-            <Zap className="w-8 h-8 text-primary" /> KONU HAKİMİYET ANALİZİ
+      {/* 3. KONU ANALİZİ (MODERN AKORDEON) */}
+      <div className="bg-white border border-slate-200 p-10 rounded-saas shadow-soft">
+         <h3 className="text-2xl font-black text-textPrimary uppercase tracking-tighter flex items-center gap-4 mb-10 pb-6 border-b border-slate-100 italic">
+            <Zap className="w-8 h-8 text-warning" /> KONU HAKİMİYET ANALİZİ
          </h3>
          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {Object.entries(CURRICULUM).map(([sub, topics]) => (
-              <div key={sub} className="bg-slate-900/50 border border-white/5 rounded-[2.5rem] overflow-hidden group">
-                 <button onClick={() => setExpandedSubject(expandedSubject === sub ? null : sub)} className="w-full p-8 flex items-center justify-between hover:bg-white/5 transition-all">
-                    <span className="text-lg font-black text-white uppercase italic tracking-tight">{sub}</span>
-                    <ChevronDown className={clsx("w-6 h-6 text-primary transition-transform", expandedSubject === sub && "rotate-180")} />
+              <div key={sub} className="bg-slate-50/50 border border-slate-200 rounded-saas overflow-hidden group hover:border-primary/30 transition-all">
+                 <button onClick={() => setExpandedSubject(expandedSubject === sub ? null : sub)} className="w-full p-8 flex items-center justify-between hover:bg-white transition-all">
+                    <span className="text-lg font-bold text-textPrimary uppercase tracking-tight">{sub}</span>
+                    <ChevronDown className={clsx("w-5 h-5 text-slate-400 transition-transform", expandedSubject === sub && "rotate-180")} />
                  </button>
                  {expandedSubject === sub && (
-                    <div className="p-4 space-y-3 bg-slate-950/50 border-t border-white/5">
+                    <div className="p-4 space-y-3 bg-white border-t border-slate-200">
                        {topics.map(t => {
                           const val = selfAssessments?.[`${sub}__${t}`];
                           return (
-                            <div key={t} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 bg-white/5 rounded-2xl border border-white/5 gap-4">
-                               <span className="text-sm font-bold text-white leading-tight opacity-80">{t}</span>
-                               <div className="flex gap-2 w-full sm:w-auto">
+                            <div key={t} className="flex flex-col lg:flex-row items-center justify-between p-5 bg-slate-50 border border-slate-100 rounded-xl gap-4">
+                               <span className="text-sm font-semibold text-textPrimary">{t}</span>
+                               <div className="flex gap-2 w-full lg:w-auto">
                                   {['knows','needs_review','dont_know'].map(opt => (
                                     <button 
                                       key={opt}
                                       onClick={() => handleSelfAssess(sub, t, val === opt ? null : opt)}
-                                      className={clsx("flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest italic transition-all border", 
+                                      className={clsx("flex-1 px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border", 
                                         val === opt 
-                                          ? (opt === 'knows' ? "bg-emerald-500 text-white border-emerald-400" : opt === 'needs_review' ? "bg-amber-500 text-white border-amber-400" : "bg-rose-500 text-white border-rose-400")
-                                          : "bg-slate-900 text-white/20 border-white/5 hover:border-white/20")}
+                                          ? (opt === 'knows' ? "bg-success text-white border-transparent shadow-soft" : opt === 'needs_review' ? "bg-warning text-white border-transparent shadow-soft" : "bg-danger text-white border-transparent shadow-soft")
+                                          : "bg-white text-slate-400 border-slate-200 hover:bg-slate-50")}
                                     >
-                                      {opt === 'knows' ? 'OLDU' : opt === 'needs_review' ? 'TEKRAR' : 'EKSİK'}
+                                      {opt === 'knows' ? 'Oldu' : opt === 'needs_review' ? 'Tekrar' : 'Eksik'}
                                     </button>
                                   ))}
                                 </div>
@@ -210,25 +217,28 @@ export default function StudentDashboard() {
             ))}
          </div>
       </div>
-
-      {/* 4. HAFTALIK PROGRAM (Net ve Büyük) */}
-      <div className="bg-surface/40 border border-white/5 p-10 rounded-[3rem] shadow-2xl overflow-hidden">
-         <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter flex items-center gap-4 mb-10">
-            <Calendar className="w-8 h-8 text-secondary" /> Haftalık Ders Programın
-         </h3>
+      
+      {/* 4. HAFTALIK PROGRAM (SaaS TABLE) */}
+      <div className="bg-white border border-slate-200 p-10 rounded-saas shadow-soft overflow-hidden">
+         <div className="flex items-center gap-4 mb-10">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-secondary border border-purple-100 shadow-soft">
+               <Calendar className="w-6 h-6" />
+            </div>
+            <h3 className="text-2xl font-black text-textPrimary uppercase tracking-tighter italic">Haftalık Ders Programı</h3>
+         </div>
          <div className="overflow-x-auto pb-4 custom-scrollbar">
-            <div className="min-w-[1200px] border border-white/5 rounded-[2rem] overflow-hidden bg-slate-900/50">
-               <div className="grid grid-cols-8 bg-slate-900 border-b border-white/10">
-                  <div className="p-5 text-center text-secondary font-black text-xs uppercase italic tracking-widest border-r border-white/5">SAAT</div>
-                  {DAYS.map(d => <div key={d} className="p-5 text-center text-white font-black text-xs uppercase italic tracking-widest border-r border-white/5">{d}</div>)}
+            <div className="min-w-[1000px] border border-slate-200 rounded-saas overflow-hidden shadow-soft">
+               <div className="grid grid-cols-8 bg-slate-50 border-b border-slate-200">
+                  <div className="p-5 text-center text-slate-400 font-bold text-[11px] uppercase tracking-widest border-r border-slate-200">SAAT</div>
+                  {DAYS.map(d => <div key={d} className="p-5 text-center text-textPrimary font-bold text-[11px] uppercase tracking-widest border-r border-slate-200">{d}</div>)}
                </div>
                {HOURS.map(h => (
-                  <div key={h} className="grid grid-cols-8 border-b border-white/5">
-                     <div className="p-4 text-center text-white/30 font-black text-[10px] bg-slate-900/80 border-r border-white/5">{h}</div>
+                  <div key={h} className="grid grid-cols-8 border-b border-slate-100">
+                     <div className="p-4 text-center text-slate-400 font-bold text-[10px] bg-slate-50/50 border-r border-slate-100">{h}</div>
                      {DAYS.map(d => {
                         const p = plans.find(p => p.day === d && p.time === h);
                         return (
-                          <div key={`${d}-${h}`} className={clsx("p-2 h-16 flex items-center justify-center text-center text-[10px] font-black uppercase italic tracking-tight border-r border-white/5 transition-all", p ? "bg-primary/20 text-primary shadow-inner" : "text-white/5")}>
+                          <div key={`${d}-${h}`} className={clsx("p-2 h-16 flex items-center justify-center text-center text-[10px] font-bold uppercase tracking-tight border-r border-slate-100 transition-colors", p ? "bg-blue-50/50 text-primary font-black" : "text-slate-300")}>
                             {p?.subject || ''}
                           </div>
                         );
@@ -238,7 +248,6 @@ export default function StudentDashboard() {
             </div>
          </div>
       </div>
-
     </div>
   );
 }
