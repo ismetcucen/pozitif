@@ -7,38 +7,40 @@ export default {
   theme: {
     extend: {
       colors: {
-        // SaaS Tarzı Yeni Renk Paleti
-        primary: "#3b82f6", // Soft Blue
-        primaryHover: "#2563eb",
-        secondary: "#8b5cf6", // Soft Purple
+        // Minimalist & Professional Theme Palette
+        primary: "#111827", // Very dark gray/black (sophisticated base)
+        primaryHover: "#1f2937",
+        secondary: "#6366f1", // Elegant Indigo accent
+        secondaryHover: "#4f46e5",
         success: "#10b981", 
         warning: "#f59e0b",
         danger: "#ef4444",
         
-        // Arka Plan Renkleri (Açık Tema)
+        // Background Colors (Clean, high contrast)
         surface: "#ffffff",
-        background: "#f8fafc",
-        section: "#f1f5f9",
+        background: "#f9fafb", // Gray 50
+        section: "#f3f4f6", // Gray 100
         
-        // Metin Renkleri
-        textPrimary: "#0f172a", // Slate 900
-        textSecondary: "#64748b", // Slate 500
-        textMuted: "#94a3b8", // Slate 400
+        // Text Colors
+        textPrimary: "#111827", // Gray 900
+        textSecondary: "#4b5563", // Gray 600
+        textMuted: "#9ca3af", // Gray 400
         
-        borderLight: "#e2e8f0",
+        borderLight: "#e5e7eb", // Gray 200
       },
       borderRadius: {
-        'saas': '16px',
-        'saas-lg': '24px',
+        'saas': '12px',      // Slightly tighter radius for a sharper, more professional look
+        'saas-lg': '16px',
       },
       boxShadow: {
-        'soft': '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)',
-        'premium': '0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.05)',
-        'button': '0 4px 14px 0 rgba(59, 130, 246, 0.39)',
+        'soft': '0 2px 4px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.01)',
+        'premium': '0 10px 20px rgba(0,0,0,0.04), 0 2px 6px rgba(0,0,0,0.02)',
+        'button': '0 4px 10px -2px rgba(0,0,0,0.1)',
+        'inner-soft': 'inset 0 2px 4px 0 rgba(0,0,0,0.02)',
       },
       animation: {
-        'fade-in': 'fadeIn 0.5s ease-out forwards',
-        'slide-up': 'slideUp 0.6s ease-out forwards',
+        'fade-in': 'fadeIn 0.3s ease-out forwards',
+        'slide-up': 'slideUp 0.4s ease-out forwards',
       },
       keyframes: {
         fadeIn: {
@@ -46,7 +48,7 @@ export default {
           '100%': { opacity: '1' },
         },
         slideUp: {
-          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
       },

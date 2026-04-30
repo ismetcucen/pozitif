@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Calendar, CheckSquare, LineChart, BrainCircuit, BookOpen, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, CheckSquare, LineChart, BrainCircuit, BookOpen, LogOut, Plus } from 'lucide-react';
 import clsx from 'clsx';
 
 const navItems = [
@@ -16,8 +16,8 @@ export default function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 glass-panel border-r-0 border-l-0 border-y-0 rounded-none border-r border-border/40 flex flex-col pt-6 pb-6 px-4 z-50">
       <div className="flex items-center gap-3 px-2 mb-10">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/30">
-          <BrainCircuit className="text-white w-6 h-6" />
+        <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center shadow-sm">
+          <Plus className="text-white w-6 h-6" strokeWidth={3} />
         </div>
         <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary tracking-wide">Pozitif Koç</h1>
       </div>

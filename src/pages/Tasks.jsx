@@ -1,51 +1,92 @@
 import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { db } from '../firebase';
 import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { CheckSquare, Plus, Trash2, CheckCircle, Clock } from 'lucide-react';
 import clsx from 'clsx';
 
-export default function Tasks() {
+export default function Tasks({ studentId: propStudentId, studentName: propStudentName }) {
+  const { studentId: paramId } = useParams();
+  const studentId = propStudentId || paramId;
   const [tasks, setTasks] = useState([]);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDesc, setNewTaskDesc] = useState('');
-  const [selectedStudent, setSelectedStudent] = useState('Ahmet Yılmaz');
+  const [taskDate, setTaskDate] = useState('');
+  const [selectedStudent, setSelectedStudent] = useState('Tüm Öğrenciler');
+  const [selectedStudentId, setSelectedStudentId] = useState('');
   const [loading, setLoading] = useState(false);
+  const [students, setStudents] = useState([]);
 
   useEffect(() => {
+    if (studentId) {
+      setSelectedStudentId(studentId);
+      if (propStudentName) setSelectedStudent(propStudentName);
+    }
+    
     try {
       const q = query(collection(db, 'tasks'), orderBy('createdAt', 'desc'));
       const unsubscribe = onSnapshot(q, (snapshot) => {
-        const tasksArr = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        let tasksArr = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        if (studentId) {
+          tasksArr = tasksArr.filter(t => t.studentId === studentId);
+        }
         setTasks(tasksArr);
-      }, (error) => {
-        console.error("Firebase Snapshot Hatası:", error);
       });
-      return () => unsubscribe();
+      
+      let unsubStudents = () => {};
+      if (!studentId) {
+        unsubStudents = onSnapshot(collection(db, 'students'), (snap) => {
+           setStudents(snap.docs.map(d => ({ id: d.id, name: d.name })));
+         });
+      }
+       
+      return () => { unsubscribe(); unsubStudents(); };
     } catch (err) {
       console.error(err);
     }
-  }, []);
+  }, [studentId, propStudentName]);
 
   const handleAddTask = async (e) => {
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
 
     setLoading(true);
+    let stName = selectedStudent;
+    let stId = selectedStudentId;
+
+    if (!propStudentId && selectedStudentId) {
+      const st = students.find(s => s.id === selectedStudentId);
+      if (st) stName = st.name;
+    }
+
     try {
       await addDoc(collection(db, 'tasks'), {
         title: newTaskTitle,
         desc: newTaskDesc,
-        studentName: selectedStudent,
+        studentName: stName,
+        studentId: stId || null,
+        targetDate: taskDate,
         done: false,
-        createdAt: new Date().toISOString()
+        createdAt: Date.now()
       });
+      // Bildirim oluştur
+      if (stId) {
+        await addDoc(collection(db, 'notifications'), {
+          toUid: stId,
+          title: 'Yeni Görev Atandı',
+          body: `Koçunuz "${newTaskTitle}" görevini sana atadı.${taskDate ? ` Teslim: ${new Date(taskDate).toLocaleDateString('tr-TR')}` : ''}`,
+          type: 'task',
+          read: false,
+          createdAt: Date.now()
+        });
+      }
       setNewTaskTitle('');
       setNewTaskDesc('');
+      setTaskDate('');
+      toast.success('Görev başarıyla eklendi!');
     } catch (error) {
-      alert("Görev eklenemedi: " + error.message);
+      toast.error("Görev eklenemedi: " + error.message);
     }
     setLoading(false);
   };
@@ -70,116 +111,187 @@ export default function Tasks() {
   };
 
   return (
-    <div className="space-y-10 animate-slide-up pb-20 text-left">
-      <header>
-        <div className="flex items-center gap-4 mb-3">
-           <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-sm">
-              <CheckSquare className="w-7 h-7" />
-           </div>
-           <h2 className="text-3xl font-black text-text tracking-tighter uppercase italic">Görev & Plan Yönetimi</h2>
+    <div className="space-y-8 animate-fade-in pb-20 pt-4 md:pt-6">
+      <header className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-slate-200 pb-6">
+        <div>
+           <h1 className="text-2xl font-bold text-slate-900 leading-tight mb-2 flex items-center gap-3">
+              <CheckSquare className="w-6 h-6 text-indigo-600" /> Görev & Plan Yönetimi
+           </h1>
+           <p className="text-slate-600 text-sm font-medium">Öğrencilerinize atadığınız görevleri ve haftalık planlarını buradan takip edin.</p>
         </div>
-        <p className="text-textMuted mt-2 text-lg font-medium pl-1">Öğrencilerine atadığın görevleri ve haftalık planlarını buradan takip et.</p>
       </header>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* YENİ GÖREV FORMU */}
-        <div className="bg-white p-10 h-fit xl:sticky top-6 border border-border rounded-[2.5rem] shadow-xl shadow-slate-200/40">
-          <h3 className="text-xl font-black mb-8 flex items-center gap-3 text-text uppercase tracking-tighter italic border-b border-border pb-6">
-            <Plus className="text-secondary w-6 h-6"/> Yeni Görev Ata
+        <div className="bg-white border border-slate-200 p-6 md:p-8 rounded-2xl shadow-sm h-fit xl:sticky top-6">
+          <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2 mb-6 pb-4 border-b border-slate-100">
+            <Plus className="text-indigo-600 w-5 h-5"/> Yeni Görev Ata
           </h3>
-          <form onSubmit={handleAddTask} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] uppercase font-black text-textMuted tracking-widest pl-1">Öğrenci Seçin</label>
+          <form onSubmit={handleAddTask} className="space-y-5">
+            {!propStudentId && (
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Öğrenci Seçin</label>
               <select 
-                value={selectedStudent}
-                onChange={(e) => setSelectedStudent(e.target.value)}
-                className="w-full bg-slate-50 border border-border rounded-xl p-4 text-text font-bold focus:border-primary outline-none cursor-pointer"
+                value={selectedStudentId}
+                onChange={(e) => {
+                  setSelectedStudentId(e.target.value);
+                  const selectedSt = students.find(s => s.id === e.target.value);
+                  setSelectedStudent(selectedSt ? selectedSt.name : 'Tüm Öğrenciler');
+                }}
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm font-medium text-slate-900 focus:border-indigo-600 outline-none cursor-pointer appearance-none"
                >
-                 <option value="Tüm Öğrenciler">Tüm Öğrenciler (Genel)</option>
-                 <option value="Ahmet Yılmaz">Ahmet Yılmaz</option>
-                 <option value="Zeynep Çelik">Zeynep Çelik</option>
-                 <option value="Burak Kaya">Burak Kaya</option>
+                 <option value="">-- Öğrenci Seç--</option>
+                 {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] uppercase font-black text-textMuted tracking-widest pl-1">Görev Başlığı</label>
+            )}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Görev Başlığı</label>
               <input 
                 type="text" 
                 value={newTaskTitle}
                 onChange={(e) => setNewTaskTitle(e.target.value)}
                 placeholder="Örn: Limit Özeti Hazırla" 
-                className="w-full bg-slate-50 border border-border rounded-xl p-4 text-text font-black focus:border-primary outline-none transition-all shadow-inner"
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm font-medium text-slate-900 focus:border-indigo-600 outline-none transition-colors"
                 required
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] uppercase font-black text-textMuted tracking-widest pl-1">Görev Detayları / Etiket</label>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Hedef Tarih</label>
+              <input 
+                type="date" 
+                value={taskDate}
+                onChange={(e) => setTaskDate(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm font-medium text-slate-900 focus:border-indigo-600 outline-none transition-colors"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Görev Detayları / Etiket</label>
               <textarea 
                 rows="3"
                 value={newTaskDesc}
                 onChange={(e) => setNewTaskDesc(e.target.value)}
                 placeholder="Örn: Cuma gününe kadar tamamlanmalı." 
-                className="w-full bg-slate-50 border border-border rounded-xl p-4 text-text font-bold focus:border-primary outline-none transition-all shadow-inner resize-none"
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm font-medium text-slate-900 focus:border-indigo-600 outline-none transition-colors resize-none"
               ></textarea>
             </div>
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full mt-2 bg-primary text-white py-5 rounded-[1.5rem] font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex justify-center items-center gap-3 uppercase text-xs tracking-widest"
+              className="w-full mt-2 bg-indigo-600 text-white py-3 rounded-lg font-semibold text-sm hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center gap-2"
             >
-              {loading ? <span className="animate-spin w-5 h-5 border-3 border-white/20 border-t-white rounded-full"/> : <><Plus className="w-5 h-5" /> Görevi Sisteme İşle</>}
+              {loading ? <span className="animate-spin w-4 h-4 border-2 border-white/20 border-t-white rounded-full"/> : <><Plus className="w-4 h-4" /> Görevi Sisteme İşle</>}
             </button>
           </form>
         </div>
 
         {/* GÖREV LİSTESİ */}
         <div className="xl:col-span-2 space-y-8">
-           <div className="flex justify-between items-end px-4">
-              <h3 className="text-2xl font-black text-text italic tracking-tighter uppercase">Aktif Görevler</h3>
-              <span className="text-[10px] font-black bg-primary/10 text-primary px-5 py-2 rounded-full uppercase tracking-widest border border-primary/20">{tasks.length} TOPLAM GÖREV</span>
+           
+           {/* GERÇEKLEŞMEYEN GÖREVLER */}
+           <div>
+              <div className="flex justify-between items-center px-2 mb-4">
+                 <h3 className="text-lg font-semibold text-slate-900">Bekleyen Görevler</h3>
+                 <span className="text-xs font-semibold bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg border border-indigo-100">{tasks.filter(t => !t.done).length} Görev</span>
+              </div>
+              <div className="space-y-4">
+                 {tasks.filter(t => !t.done).length === 0 ? (
+                   <div className="text-center py-10 border-2 border-dashed border-slate-200 rounded-2xl bg-white">
+                     <CheckSquare className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                     <p className="text-slate-500 font-medium text-sm">Bekleyen görev bulunmuyor.</p>
+                   </div>
+                 ) : (
+                   tasks.filter(t => !t.done).map((task) => (
+                     <div key={task.id} className="bg-white p-5 rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-md transition-all flex items-start gap-5 group relative overflow-hidden">
+                        <button 
+                          onClick={() => toggleStatus(task.id, task.done)}
+                          className="mt-0.5 shrink-0 w-6 h-6 rounded flex items-center justify-center border transition-all bg-slate-50 border-slate-300 hover:border-emerald-400 group-hover:bg-white"
+                        >
+                        </button>
+                        
+                        <div className="flex-1 text-left min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1.5">
+                            <h4 className="font-semibold text-base transition-colors truncate text-slate-900">
+                              {task.title}
+                            </h4>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {task.targetDate && (
+                                <span className="text-[10px] font-bold bg-amber-50 text-amber-600 px-2.5 py-1 rounded border border-amber-100 flex items-center gap-1">
+                                  <Clock className="w-3 h-3" /> {new Date(task.targetDate).toLocaleDateString('tr-TR')}
+                                </span>
+                              )}
+                              <span className="text-[10px] font-bold bg-slate-100 px-2.5 py-1 rounded text-slate-600 uppercase tracking-widest">
+                                {task.studentName}
+                              </span>
+                            </div>
+                          </div>
+                          {task.desc && <p className="text-sm transition-colors text-slate-600">{task.desc}</p>}
+                        </div>
+
+                        <button 
+                          onClick={() => handleDelete(task.id)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-slate-400 hover:bg-red-50 hover:text-red-500 rounded-lg flex-shrink-0 ml-2"
+                          title="Görevi Sil"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                     </div>
+                   ))
+                 )}
+              </div>
            </div>
 
-           <div className="space-y-6">
-              {tasks.length === 0 ? (
-                <div className="text-center py-32 border border-dashed border-border rounded-[3rem] bg-slate-50">
-                  <CheckSquare className="w-20 h-20 text-textMuted mx-auto mb-6 opacity-10" />
-                  <p className="text-textMuted text-xl font-black uppercase tracking-widest italic opacity-40">Henüz atanmış bir görev bulunmuyor.</p>
-                </div>
-              ) : (
-                tasks.map((task) => (
-                  <div key={task.id} className="bg-white p-8 rounded-[2.5rem] border border-border hover:border-primary/30 hover:shadow-2xl hover:shadow-slate-200/60 transition-all flex items-start gap-6 group relative overflow-hidden shadow-sm">
-                     <div 
-                       onClick={() => toggleStatus(task.id, task.done)}
-                       className={clsx(
-                         "mt-1 w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer border-2 transition-all shadow-sm",
-                         task.done ? "bg-green-500 border-green-400 scale-110" : "bg-slate-50 border-border hover:border-primary hover:bg-white"
-                       )}
-                     >
-                       {task.done && <CheckCircle className="w-5 h-5 text-white" />}
-                     </div>
-                     
-                     <div className="flex-1 text-left">
-                       <div className="flex flex-wrap justify-between items-start mb-2 gap-4">
-                         <h4 className={clsx("font-black text-xl italic tracking-tighter uppercase transition-all", task.done ? "text-textMuted/40 line-through" : "text-text")}>
-                           {task.title}
-                         </h4>
-                         <span className="text-[10px] font-black bg-slate-100 px-4 py-1.5 rounded-full text-textMuted border border-border uppercase tracking-widest italic">
-                           {task.studentName}
-                         </span>
-                       </div>
-                       {task.desc && <p className={clsx("text-sm font-medium italic transition-all", task.done ? "text-textMuted/30" : "text-textMuted")}>{task.desc}</p>}
-                     </div>
+           {/* GERÇEKLEŞEN GÖREVLER */}
+           <div>
+              <div className="flex justify-between items-center px-2 mb-4">
+                 <h3 className="text-lg font-semibold text-slate-900 border-l-4 border-emerald-500 pl-3">Tamamlanan Görevler</h3>
+                 <span className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100">{tasks.filter(t => t.done).length} Görev</span>
+              </div>
+              <div className="space-y-4">
+                 {tasks.filter(t => t.done).length === 0 ? (
+                   <div className="text-center py-6 border border-slate-100 rounded-2xl bg-slate-50">
+                     <p className="text-slate-400 font-medium text-sm">Görev tamamlandıkça burada görünecek.</p>
+                   </div>
+                 ) : (
+                   tasks.filter(t => t.done).map((task) => (
+                     <div key={task.id} className="bg-slate-50/50 p-4 rounded-xl border border-slate-200 flex items-start gap-5 group relative overflow-hidden opacity-80 hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => toggleStatus(task.id, task.done)}
+                          className="mt-0.5 shrink-0 w-6 h-6 rounded flex items-center justify-center border transition-all bg-emerald-500 border-emerald-500"
+                        >
+                          <CheckCircle className="w-4 h-4 text-white" />
+                        </button>
+                        
+                        <div className="flex-1 text-left min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1.5">
+                            <h4 className="font-semibold text-sm transition-colors truncate text-slate-500 line-through">
+                              {task.title}
+                            </h4>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {task.targetDate && (
+                                <span className="text-[9px] font-bold text-slate-400 flex items-center gap-1 opacity-70">
+                                  <Clock className="w-3 h-3" /> {new Date(task.targetDate).toLocaleDateString('tr-TR')}
+                                </span>
+                              )}
+                              <span className="text-[9px] font-bold bg-slate-200/50 px-2.5 py-1 rounded text-slate-500 uppercase tracking-widest">
+                                {task.studentName}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
 
-                     <button 
-                       onClick={() => handleDelete(task.id)}
-                       className="opacity-0 group-hover:opacity-100 transition-all p-3 text-red-400 hover:bg-red-50 hover:text-red-500 rounded-2xl flex-shrink-0"
-                       title="Görevi Sil"
-                     >
-                       <Trash2 className="w-5 h-5" />
-                     </button>
-                  </div>
-                ))
-              )}
+                        <button 
+                          onClick={() => handleDelete(task.id)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-slate-400 hover:bg-red-50 hover:text-red-500 rounded-lg flex-shrink-0 ml-2"
+                          title="Görevi Sil"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                     </div>
+                   ))
+                 )}
+              </div>
            </div>
         </div>
       </div>

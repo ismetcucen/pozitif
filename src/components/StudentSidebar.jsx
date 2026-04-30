@@ -1,14 +1,21 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Layout, Calendar, CheckSquare, LineChart, Zap, BookOpen, LogOut, User, Key, Eye, Award } from 'lucide-react';
+import { 
+  Layout, TrendingUp, MessageSquare, Eye, Users,
+  LogOut, Key, Plus, BrainCircuit, Zap
+} from 'lucide-react';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import clsx from 'clsx';
 
 const navItems = [
-  { icon: Layout, label: 'Çalışma Masası',  path: '/student/dashboard' },
-  { icon: Award,  label: 'Liderlik Tablosu', path: '/student/leaderboard' },
-  { icon: Eye,    label: 'Veli Görünümü',   path: '/student/parent' },
+  { icon: Layout,        label: 'Akıllı Program',      path: '/student/dashboard/program' },
+  { icon: Zap,           label: 'Odaklanma (Radar)',   path: '/student/focus' },
+  { icon: BrainCircuit,  label: 'Deneme Analizi',       path: '/student/exam-analysis' },
+  { icon: TrendingUp,    label: 'Gelişim & Analizler',  path: '/student/dashboard/exams' },
+  { icon: MessageSquare, label: 'Koçumla Mesajlaş',     path: '/student/dashboard/mesaj' },
+  { icon: Users,         label: 'Koç Dizini',            path: '/student/coaches' },
+  { icon: Eye,           label: 'Veli Görünümü',        path: '/student/parent' },
 ];
 
 export default function StudentSidebar({ isOpen, onClose }) {
@@ -30,32 +37,33 @@ export default function StudentSidebar({ isOpen, onClose }) {
     try {
       const { updatePassword } = await import('firebase/auth');
       await updatePassword(auth.currentUser, newPass);
-      // Firestore'daki password alanını da güncelle (Koçun sıfırlama işlevi çalışsın diye)
       try {
         await updateDoc(doc(db, 'students', auth.currentUser.uid), { password: newPass });
-      } catch (_) { /* Koç hesabıysa students'ta belge olmayabilir, yok say */ }
+      } catch (_) { /* ignore if no student doc */ }
       alert('Şifreniz başarıyla güncellendi!');
     } catch(err) {
-      alert('Hata oluştu: Güvenlik nedeniyle şifre değiştirmek için sisteme yakın zamanda giriş yapmış olmanız gerekir. Lütfen çıkış yapıp tekrar girdikten sonra deneyin.');
+      alert('Güvenlik nedeniyle şifre değiştirmek için sisteme yakın zamanda giriş yapmış olmanız gerekir. Lütfen çıkış yapıp tekrar girdikten sonra deneyin.');
     }
   };
 
   return (
     <aside className={clsx(
-      "fixed left-0 top-0 h-screen w-64 glass-panel border-r-0 border-l-0 border-y-0 rounded-none border-r border-border/40 flex flex-col pt-6 pb-6 px-4 z-50 transition-transform duration-300 md:translate-x-0 bg-[#0a0a0b] md:bg-opacity-80 backdrop-blur-xl",
+      "fixed left-0 top-0 h-screen w-64 bg-surface border-r border-borderLight flex flex-col pt-6 pb-6 px-4 z-50 transition-transform duration-300 md:translate-x-0 shadow-sm",
       isOpen ? "translate-x-0" : "-translate-x-full"
     )}>
-      <div className="flex flex-col items-center gap-2 mb-10 mt-2">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-secondary to-blue-500 flex items-center justify-center shadow-lg shadow-secondary/30">
-          <User className="text-white w-8 h-8" />
+      {/* LOGO */}
+      <div className="flex items-center gap-3 mb-10 mt-2 px-2">
+        <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center shadow-sm flex-shrink-0">
+          <Plus className="w-6 h-6 text-white" strokeWidth={3} />
         </div>
-        <div className="text-center mt-2">
-          <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-secondary to-blue-500 tracking-wide">Pozitif Koç</h1>
-          <span className="text-[10px] font-semibold text-secondary uppercase tracking-widest bg-secondary/10 px-2 py-0.5 rounded-full">Öğrenci Paneli</span>
+        <div>
+          <span className="text-base font-semibold text-textPrimary tracking-tight block leading-none">PozitifKoç</span>
+          <span className="text-xs font-medium text-textSecondary block mt-1 leading-none">Öğrenci Paneli</span>
         </div>
       </div>
 
-      <nav className="flex-1 space-y-2">
+      {/* NAV */}
+      <nav className="flex-1 space-y-1 overflow-y-auto no-scrollbar">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
@@ -63,10 +71,10 @@ export default function StudentSidebar({ isOpen, onClose }) {
             onClick={onClose}
             className={({ isActive }) =>
               clsx(
-                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium whitespace-nowrap",
-                isActive 
-                  ? "bg-secondary/10 text-secondary border border-secondary/20 shadow-inner" 
-                  : "text-textMuted hover:bg-surfaceHover hover:text-text"
+                "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 font-medium text-sm",
+                isActive
+                  ? "bg-secondary/10 text-secondary font-semibold"
+                  : "text-textSecondary hover:bg-section hover:text-textPrimary"
               )
             }
           >
@@ -76,12 +84,13 @@ export default function StudentSidebar({ isOpen, onClose }) {
         ))}
       </nav>
 
-      <div className="mt-auto space-y-2">
-        <button onClick={handleChangePassword} className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-textMuted hover:bg-surfaceHover hover:text-white transition-all duration-300 font-medium cursor-pointer">
+      {/* BOTTOM ACTIONS */}
+      <div className="mt-auto space-y-1 border-t border-borderLight pt-4">
+        <button onClick={handleChangePassword} className="flex w-full items-center gap-3 px-4 py-3 rounded-lg text-textSecondary hover:bg-section hover:text-textPrimary transition-all duration-200 text-sm font-medium cursor-pointer">
           <Key className="w-5 h-5 flex-shrink-0" />
           <span>Şifre Değiştir</span>
         </button>
-        <button onClick={handleLogout} className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-all duration-300 font-medium cursor-pointer">
+        <button onClick={handleLogout} className="flex w-full items-center gap-3 px-4 py-3 rounded-lg text-red-500 hover:bg-red-50 transition-all duration-200 text-sm font-medium cursor-pointer">
           <LogOut className="w-5 h-5 flex-shrink-0" />
           <span>Oturumu Kapat</span>
         </button>

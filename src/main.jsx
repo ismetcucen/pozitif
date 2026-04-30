@@ -48,3 +48,11 @@ createRoot(document.getElementById('root')).render(
     </GlobalErrorBoundary>
   </StrictMode>
 )
+// PWA Service Worker Kaydı
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('SW Kayıt Başarılı:', reg.scope))
+      .catch(err => console.log('SW Kayıt Hatası:', err));
+  });
+}

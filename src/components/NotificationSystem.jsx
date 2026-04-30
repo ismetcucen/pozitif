@@ -95,11 +95,34 @@ export function StudentNotifications({ studentId }) {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
+    if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  useEffect(() => {
     if (!studentId) return;
+    let isInitialLoad = true;
     const q = query(collection(db, 'notifications'), where('toStudentId', '==', studentId));
+    
     return onSnapshot(q, snap => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      if (!isInitialLoad && 'Notification' in window && Notification.permission === 'granted') {
+        snap.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const newNotif = change.doc.data();
+            if (!newNotif.isRead) {
+              new Notification('PozitifKoç - Yeni Bildirim!', {
+                body: newNotif.message,
+                icon: '/icons/icon-192x192.png' // Assuming you have a standard PWA icon
+              });
+            }
+          }
+        });
+      }
+      isInitialLoad = false;
       setNotifications(data);
     });
   }, [studentId]);

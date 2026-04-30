@@ -1,196 +1,296 @@
-import { useState, useEffect } from 'react';
-import { db } from '../firebase';
-import { collection, onSnapshot, query, where, orderBy, limit } from 'firebase/firestore';
+import { useState, useEffect, useMemo } from 'react';
+import { db, auth } from '../firebase';
+import { collection, onSnapshot, query, orderBy, doc, getDoc, updateDoc, setDoc, where } from 'firebase/firestore';
+import toast from 'react-hot-toast';
 import { 
   Users, Calendar, Clock, Video, 
   ChevronRight, TrendingUp, Sparkles, 
-  BrainCircuit, LayoutDashboard,
-  Target, Zap, GraduationCap, Map,
-  MessageSquare, Star, ArrowRight
+  CheckSquare, Target, BarChart2, 
+  ArrowRight, CheckCircle, AlertCircle, X,
+  BookOpen, Timer, Zap, BellRing, Send
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import clsx from 'clsx';
+
+// --- Sağdan açılan panel bileşeni ---  
+function Drawer({ open, onClose, title, icon: Icon, iconColor, children }) {
+  return (
+    <>
+      <div onClick={onClose} className={clsx('fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] transition-opacity duration-300', open ? 'opacity-100' : 'opacity-0 pointer-events-none')} />
+      <div className={clsx('fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl z-[300] flex flex-col transition-transform duration-300 ease-out', open ? 'translate-x-0' : 'translate-x-full')}>
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className={clsx('w-9 h-9 rounded-xl flex items-center justify-center', iconColor)}><Icon className="w-5 h-5" /></div>
+            <h2 className="text-base font-bold text-slate-900">{title}</h2>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 text-slate-500 transition-colors"><X className="w-4 h-4" /></button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-5 space-y-3">{children}</div>
+      </div>
+    </>
+  );
+}
 
 export default function CoachDashboardHome() {
   const [students, setStudents] = useState([]);
   const [appointments, setAppointments] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [exams, setExams] = useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [weeklyPlans, setWeeklyPlans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [drawer, setDrawer] = useState(null);
   const navigate = useNavigate();
 
+  const today = new Date().toISOString().slice(0, 10);
+  const todayLocal = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`;
+
   useEffect(() => {
-    // Öğrencileri dinle
-    const unsubStudents = onSnapshot(collection(db, 'students'), (snap) => {
-      setStudents(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      setLoading(false);
-    });
+    let unsubs = [];
 
-    // Yaklaşan Görüşmeleri dinle
-    const unsubApps = onSnapshot(
-      query(collection(db, 'appointments'), orderBy('date', 'asc')),
-      (snap) => {
-        setAppointments(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    const initialize = async () => {
+      if (!auth.currentUser) return;
+      
+      try {
+        const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+        const userData = userDoc.data();
+        const isAdmin = ['admin', 'super_admin', 'kurucu'].includes(userData?.role);
+
+        // 1. Öğrencileri Çek
+        const qStudents = collection(db, 'students');
+
+        const uStudents = onSnapshot(qStudents, (snap) => {
+          let allStudents = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          
+          if (!isAdmin) {
+            allStudents = allStudents.filter(s => 
+              s.addedBy === auth.currentUser.uid || 
+              s.coachId === auth.currentUser.uid
+            );
+          }
+          
+          setStudents(allStudents);
+          setLoading(false);
+        });
+        unsubs.push(uStudents);
+
+        // 2. Randevuları Çek
+        const uApps = onSnapshot(query(collection(db, 'appointments'), orderBy('date', 'asc')), (snap) => {
+          setAppointments(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        });
+        unsubs.push(uApps);
+
+        // 3. Görevleri Çek
+        const uTasks = onSnapshot(query(collection(db, 'tasks'), orderBy('createdAt', 'desc')), (snap) => {
+          setTasks(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        });
+        unsubs.push(uTasks);
+
+        // 4. Denemeleri Çek
+        const uExams = onSnapshot(query(collection(db, 'exams'), orderBy('createdAt', 'desc')), (snap) => {
+          setExams(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        });
+        unsubs.push(uExams);
+
+        // 5. Seansları Çek (Onay Bekleyenler Dahil)
+        const uSessions = onSnapshot(query(collection(db, 'studySessions'), orderBy('createdAt', 'desc')), (snap) => {
+          setSessions(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        });
+        unsubs.push(uSessions);
+
+        // 6. Haftalık Planlar
+        const uWeekly = onSnapshot(collection(db, 'weeklyPlans'), (snap) => {
+          setWeeklyPlans(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        });
+        unsubs.push(uWeekly);
+
+      } catch (err) {
+        console.error("Dashboard Init Error:", err);
+        setLoading(false);
       }
-    );
+    };
 
-    return () => { unsubStudents(); unsubApps(); };
+    initialize();
+    return () => unsubs.forEach(fn => fn());
   }, []);
 
   const totalStudents = students.length;
-  const studyingStudents = students.filter(s => s.isStudying).length;
+  const studyingStudents = students.filter(s => s.currentStatus?.isStudying).length;
+  const todayTasks = tasks.filter(t => t.targetDate === today || t.targetDate === todayLocal);
+  const todayDone = todayTasks.filter(t => t.done).length;
+  const recentExams = exams.slice(0, 5);
+  
+  const pendingSessions = sessions.filter(s => s.status === 'pending');
+
+  const formatTime = (totalSeconds) => {
+    if (totalSeconds > 0 && totalSeconds < 60) return '< 1 dk';
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    if (hrs > 0) return `${hrs} sa ${mins} dk`;
+    return `${mins} dk`;
+  };
+
+  const laggingStudents = useMemo(() => {
+    const daysTR = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+    const now = new Date();
+    const currentDay = daysTR[now.getDay()];
+    const currentHourStr = `${String(now.getHours()).padStart(2, '0')}:00`;
+
+    return students.filter(s => {
+      if (s.currentStatus?.isStudying) return false;
+      const plannedSlot = weeklyPlans.find(p => p.studentId === s.id && p.day === currentDay && p.time === currentHourStr);
+      if (plannedSlot && plannedSlot.subject) {
+        s.shouldBeStudying = plannedSlot.subject;
+        return true;
+      }
+      return false;
+    });
+  }, [students, weeklyPlans]);
+
+  const handleSendInactivityAlert = async (student) => {
+    try {
+      await setDoc(doc(collection(db, 'notifications')), {
+        toStudentId: student.id,
+        toStudentName: student.name,
+        fromCoachId: auth.currentUser?.uid,
+        message: `📢 Program Uyarısı: ${student.name}, şu an programında olan "${student.shouldBeStudying}" dersine henüz başlamadın. Lütfen masaya geç! 💪`,
+        type: 'warning',
+        isRead: false,
+        createdAt: new Date().toISOString()
+      });
+      toast.success(`${student.name}'a ders uyarısı gönderildi!`);
+    } catch (e) { toast.error('Hata: ' + e.message); }
+  };
+
+  const handleApproveSession = async (session) => {
+    try {
+      await updateDoc(doc(db, 'studySessions', session.id), { status: 'approved' });
+      toast.success('Onaylandı!');
+    } catch(err) { toast.error('Hata!'); }
+  };
+
+  const handleSendWarning = async (studentId, studentName) => {
+    const msg = prompt(`${studentName} isimli öğrenciye uyarı mesajını yazın:`, "Süreyi aştın, derhal masaya dön!");
+    if (!msg) return;
+    try {
+      await updateDoc(doc(db, 'students', studentId), { warningMessage: msg });
+      toast.success('Uyarı gönderildi!');
+    } catch (e) { toast.error('Hata!'); }
+  };
 
   if (loading) return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6 text-primary font-bold uppercase tracking-widest animate-pulse">
-       VERİLER YAZILIYOR...
+    <div className="min-h-screen bg-background flex items-center justify-center p-6 text-textMuted font-medium text-sm animate-pulse">
+       Koç Paneli Yükleniyor...
     </div>
   );
 
-  return (
-    <div className="space-y-8 md:space-y-12 animate-fade-in relative z-20 pb-20 text-left bg-background pt-4 md:pt-6 px-4 md:px-0">
-      
-      {/* 1. SaaS HERO HEADER */}
-      <header className="flex flex-col xl:flex-row items-center justify-between gap-8 md:gap-10">
-        <div className="flex-1 text-center xl:text-left w-full">
-           <div className="inline-flex items-center gap-3 px-4 md:px-5 py-2 md:py-2.5 rounded-full bg-blue-50 border border-blue-100 text-primary text-[9px] md:text-[10px] font-bold tracking-widest uppercase mb-4 md:mb-6 shadow-soft mx-auto xl:mx-0">
-              <Sparkles className="w-3.5 h-3.5 md:w-4 h-4 text-warning" /> BUGÜN VERİMLİ BİR GÜN OLACAK
-           </div>
-           <h1 className="text-3xl md:text-5xl font-black text-textPrimary mb-3 md:mb-4 tracking-tighter uppercase leading-none">Hoş Geldiniz, <span className="text-primary italic">Kaptan!</span></h1>
-           <p className="text-textSecondary max-w-xl text-base md:text-lg font-medium leading-relaxed opacity-80 mx-auto xl:mx-0">Öğrencilerinin gelişimini anlık izle, riskleri önceden tespit et ve başarısını yönet.</p>
-        </div>
+  const statCards = [
+    { id: 'students', label: 'Öğrencilerim', value: totalStudents, icon: Users, color: 'text-primary', bg: 'bg-primary/5', desc: 'Listeyi Gör', drawerTitle: 'Kayıtlı Öğrenciler', drawerIconColor: 'bg-primary/10 text-primary' },
+    { id: 'active', label: 'Aktif Çalışan', value: studyingStudents, icon: Clock, color: 'text-emerald-500', bg: 'bg-emerald-50', desc: 'Masadakiler', drawerTitle: 'Şu An Çalışıyor', drawerIconColor: 'bg-emerald-50 text-emerald-600' },
+    { id: 'tasks', label: 'Bugünkü Hedef', value: `${todayDone}/${todayTasks.length}`, icon: CheckSquare, color: 'text-amber-500', bg: 'bg-amber-50', desc: 'Görevleri Aç', drawerTitle: 'Bugünün Görevleri', drawerIconColor: 'bg-amber-50 text-amber-600' },
+    { id: 'appointments', label: 'Randevular', value: appointments.length, icon: Calendar, color: 'text-indigo-500', bg: 'bg-indigo-50', desc: 'Takvime Git', drawerTitle: 'Yaklaşan Randevular', drawerIconColor: 'bg-indigo-50 text-indigo-600' },
+  ];
 
-        <div className="saas-card p-6 md:p-8 flex items-center gap-4 md:gap-6 group cursor-pointer hover:border-primary/30 w-full xl:min-w-[320px]">
-           <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-primary flex items-center justify-center shadow-button group-hover:scale-105 transition-transform shrink-0">
-              <Zap className="text-white w-6 h-6 md:w-8 h-8" />
+  const openCard = statCards.find(c => c.id === drawer);
+
+  return (
+    <div className="space-y-8 animate-fade-in pb-20 pt-4 md:pt-6">
+      <header className="flex flex-col xl:flex-row items-start justify-between gap-6">
+        <div className="flex-1 w-full">
+           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-secondary/10 text-secondary text-xs font-semibold mb-4 border border-secondary/20">
+              <Sparkles className="w-3.5 h-3.5" /> Günlük Özet
            </div>
-           <div className="w-full">
-              <p className="text-[9px] md:text-[10px] text-textMuted font-bold uppercase tracking-widest mb-1 opacity-60">AKTİF ÖĞRENCİ LİMİTİ</p>
-              <div className="flex items-end gap-3 leading-none">
-                 <span className="text-2xl md:text-3xl font-black text-textPrimary tracking-tighter">{totalStudents} / 100</span>
-                 <div className="flex-1 max-w-[100px] h-2 md:h-2.5 bg-slate-100 rounded-full mb-1 border border-slate-200">
-                    <div className="h-full bg-primary shadow-soft" style={{ width: `${(totalStudents/100)*100}%` }} />
-                 </div>
-              </div>
-           </div>
+           <h1 className="text-2xl font-bold text-textPrimary mb-2 leading-tight">Yönetim Paneli</h1>
+           <p className="text-textSecondary text-sm font-medium">Sorumlu olduğunuz öğrencilerin anlık gelişimini buradan takip edin.</p>
         </div>
       </header>
 
-      {/* 2. ANA İSTATİSTİK KARTLARI */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        {[
-          { label: 'TOPLAM ÖĞRENCİ', value: totalStudents, icon: Users, color: 'text-primary', bg: 'bg-blue-50 border-blue-100' },
-          { label: 'MASADA OLANLAR', value: studyingStudents, icon: Clock, color: 'text-orange-500', bg: 'bg-orange-50 border-orange-100' },
-          { label: 'CANLI DERSLER', value: students.filter(s => s.activeStream).length, icon: Video, color: 'text-purple-500', bg: 'bg-purple-50 border-purple-100' },
-          { label: 'GÖRÜŞMELER', value: appointments.length, icon: MessageSquare, color: 'text-success', bg: 'bg-emerald-50 border-emerald-100' },
-        ].map(card => (
-          <div key={card.label} className="saas-card p-6 md:p-10 flex flex-col items-center justify-center text-center group hover:-translate-y-1 cursor-pointer">
-             <div className={clsx("w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl border flex items-center justify-center mb-4 md:mb-6 shadow-soft group-hover:scale-110 transition-transform", card.bg)}>
-                <card.icon className={clsx("w-6 h-6 md:w-8 h-8", card.color)} />
-             </div>
-             <div className="text-2xl md:text-4xl font-black text-textPrimary mb-1 md:mb-2 tracking-tighter italic">{card.value}</div>
-             <div className="text-[8px] md:text-[10px] font-bold text-textSecondary uppercase tracking-widest opacity-60">{card.label}</div>
-          </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map(card => (
+          <button key={card.id} onClick={() => setDrawer(card.id)} className="bg-surface border border-borderLight p-5 rounded-saas flex flex-col items-start hover:shadow-soft hover:border-primary/30 transition-all text-left group w-full relative">
+            <div className="flex items-center justify-between w-full mb-4">
+              <span className="text-sm font-medium text-textSecondary">{card.label}</span>
+              <div className={clsx('w-9 h-9 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110', card.bg)}><card.icon className={clsx("w-4 h-4", card.color)} /></div>
+            </div>
+            <div className="text-2xl font-bold text-textPrimary mb-1">{card.value}</div>
+            <div className="text-[10px] font-bold text-secondary uppercase opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">{card.desc} <ChevronRight className="w-3 h-3"/></div>
+          </button>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 md:gap-10">
-        
-        {/* 3. ÖĞRENCİ PERFORMANS ÖZETİ */}
-        <div className="saas-panel p-6 md:p-10">
-           <div className="flex flex-col sm:flex-row items-center justify-between mb-8 md:mb-10 border-b border-slate-100 pb-6 md:pb-8 gap-4">
-              <h3 className="text-lg md:text-xl font-bold text-textPrimary uppercase tracking-tighter flex items-center gap-3 italic underline decoration-primary/30 underline-offset-8">
-                 <Clock className="w-6 h-6 md:w-7 h-7 text-secondary" /> Öğrenci Performans Listesi
-              </h3>
-              <span className="text-[9px] md:text-[10px] font-black bg-blue-50 text-primary border border-blue-100 px-4 md:px-5 py-1.5 md:py-2 rounded-full tracking-widest uppercase">{studyingStudents} AKTİF</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Onay Bekleyenler */}
+        <div className="bg-surface border border-borderLight rounded-saas p-6 shadow-soft flex flex-col h-[400px]">
+           <div className="flex items-center justify-between mb-5 pb-4 border-b border-borderLight">
+              <h3 className="text-base font-semibold text-textPrimary flex items-center gap-2"><CheckCircle className="w-5 h-5 text-indigo-500" /> Kanıtlı Onaylar</h3>
+              <span className="text-xs font-bold bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-lg border border-indigo-100">{pendingSessions.length} Bekleyen</span>
            </div>
+           <div className="space-y-3 overflow-y-auto custom-scrollbar flex-1 pr-2">
+              {pendingSessions.length > 0 ? pendingSessions.map(sess => (
+                <div key={sess.id} className="p-4 rounded-xl border border-borderLight bg-white hover:shadow-sm transition-shadow">
+                   <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                         <span className="text-[10px] font-bold text-primary uppercase bg-primary/5 px-2 py-0.5 rounded inline-block mb-1">{sess.subject}</span>
+                         <h4 className="text-sm font-bold text-textPrimary truncate">{students.find(s => s.id === sess.studentId)?.name || 'Öğrenci'}</h4>
+                         <p className="text-xs text-textSecondary mt-0.5">{sess.topic} • {formatTime(sess.durationSeconds || sess.duration)}</p>
+                      </div>
+                      {sess.proofPhoto && <a href={sess.proofPhoto} target="_blank" rel="noreferrer" className="w-12 h-12 rounded-lg bg-section border border-borderLight overflow-hidden shrink-0"><img src={sess.proofPhoto} className="w-full h-full object-cover"/></a>}
+                   </div>
+                   <button onClick={() => handleApproveSession(sess)} className="w-full mt-4 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-colors border border-emerald-100 font-bold text-[10px] uppercase rounded-lg">Onayla</button>
+                </div>
+              )) : <div className="h-full flex flex-col items-center justify-center text-textMuted text-sm">Bekleyen işlem yok.</div>}
+           </div>
+        </div>
 
-           <div className="space-y-3 md:space-y-4 max-h-[400px] md:max-h-[500px] overflow-y-auto custom-scrollbar pr-1 md:pr-3">
-              {students.map(student => (
-                <div key={student.id} 
-                  onClick={() => navigate(`/coach/students/${student.id}`)}
-                  className="p-4 md:p-6 bg-slate-50 border border-slate-100 rounded-saas flex items-center justify-between group hover:bg-white hover:border-primary/30 hover:shadow-premium transition-all cursor-pointer"
-                >
-                   <div className="flex items-center gap-4 md:gap-6 min-w-0">
-                      <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl bg-white border border-slate-200 shadow-soft flex items-center justify-center text-primary font-black text-base md:text-xl italic uppercase group-hover:bg-primary group-hover:text-white group-hover:border-transparent transition-all shrink-0">
-                         {student.name.charAt(0)}
-                      </div>
-                      <div className="min-w-0">
-                         <div className="text-base md:text-lg font-black text-textPrimary italic tracking-tighter uppercase mb-0.5 group-hover:text-primary transition-colors truncate">{student.name}</div>
-                         <div className="text-[8px] md:text-[10px] text-textSecondary font-bold uppercase tracking-widest flex items-center gap-1.5 truncate">
-                            <Target className="w-3 h-3 text-secondary shrink-0" /> <span className="truncate">{student.universityGoal || 'Üniversite'}</span>
-                         </div>
+        {/* Canlı Kontrol */}
+        <div className="bg-surface border border-borderLight rounded-saas p-6 shadow-soft flex flex-col h-[400px]">
+           <div className="flex items-center justify-between mb-5 pb-4 border-b border-borderLight">
+              <h3 className="text-base font-semibold text-textPrimary flex items-center gap-2">
+                 <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span></span>
+                 Canlı İzleyici
+              </h3>
+           </div>
+           <div className="space-y-3 overflow-y-auto custom-scrollbar flex-1 pr-2">
+              {students.map(s => (
+                <div key={s.id} className={clsx("p-3 rounded-xl border transition-all flex items-center justify-between", s.currentStatus?.isStudying ? "bg-emerald-50 border-emerald-100" : "bg-white border-slate-100 opacity-60")}>
+                   <div className="flex items-center gap-3">
+                      <div className={clsx("w-2 h-2 rounded-full", s.currentStatus?.isStudying ? (s.currentStatus?.timerMode === 'break' ? "bg-amber-500" : "bg-emerald-500 animate-pulse") : "bg-slate-300")} />
+                      <div>
+                         <p className="text-sm font-bold text-slate-800">{s.name}</p>
+                         <p className="text-[10px] font-bold text-slate-500 uppercase">
+                            {s.currentStatus?.isStudying 
+                              ? (s.currentStatus?.timerMode === 'break' ? '☕ Molada' : `${s.currentStatus?.subject} Çalışıyor`) 
+                              : 'Çevrimdışı'}
+                         </p>
                       </div>
                    </div>
-                   <div className="flex items-center gap-4 md:gap-6 shrink-0">
-                      <div className="text-right hidden sm:block">
-                         {student.isStudying ? (
-                           <>
-                             <div className="text-[9px] md:text-[10px] font-black text-success uppercase tracking-widest italic">{student.currentTask || 'Ders'}</div>
-                             <div className="text-[10px] font-bold text-textMuted">{student.endTime || '--:--'}</div>
-                           </>
-                         ) : (
-                           <div className="text-[9px] md:text-[10px] font-bold text-textMuted uppercase tracking-widest opacity-40">Mola</div>
-                         )}
-                      </div>
-                      <ChevronRight className="w-5 h-5 md:w-6 h-6 text-slate-200 group-hover:text-primary transition-all" />
-                   </div>
+                   {s.currentStatus?.isStudying && <button onClick={() => handleSendWarning(s.id, s.name)} className="p-1.5 bg-amber-50 text-amber-600 border border-amber-200 rounded hover:bg-amber-100 transition-colors"><AlertCircle className="w-4 h-4" /></button>}
                 </div>
               ))}
            </div>
         </div>
-
-        {/* 4. TRENDLER & GÖRÜŞMELER */}
-        <div className="space-y-8 md:space-y-10">
-           {/* SON DENEME NET TRENDİ */}
-           <div className="saas-card p-6 md:p-10 bg-slate-50/50">
-              <h3 className="text-lg md:text-xl font-bold text-textPrimary uppercase tracking-tighter flex items-center gap-3 md:gap-4 mb-6 md:mb-8 italic">
-                 <TrendingUp className="w-6 h-6 md:w-7 h-7 text-primary" /> Son Deneme Analizleri
-              </h3>
-              <div className="grid grid-cols-1 gap-3 md:gap-4 overflow-y-auto max-h-[220px] custom-scrollbar pr-1">
-                 {students.slice(0, 5).map(s => (
-                   <div key={s.id} className="p-4 md:p-5 bg-white border border-slate-100 rounded-xl md:rounded-2xl flex items-center justify-between shadow-soft hover:shadow-premium transition-all">
-                      <span className="text-xs md:text-sm font-bold text-textPrimary italic uppercase truncate pr-4">{s.name}</span>
-                      <span className="bg-blue-50 text-primary px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[8px] md:text-[10px] font-black uppercase tracking-widest border border-blue-100 shrink-0">
-                         {s.lastExamType || 'TYT'} {s.lastExamNet || '0'} Net
-                      </span>
-                   </div>
-                 ))}
-              </div>
-           </div>
-
-           {/* YAKLAŞAN GÖRÜŞMELER */}
-           <div className="saas-panel p-6 md:p-10">
-              <div className="flex items-center justify-between mb-8 md:mb-10 border-b border-slate-100 pb-6 md:pb-8">
-                 <h3 className="text-lg md:text-xl font-bold text-textPrimary uppercase tracking-tighter flex items-center gap-3 md:gap-4 italic">
-                    <Calendar className="w-6 h-6 md:w-7 h-7 text-success" /> Randevular
-                 </h3>
-                 <button onClick={() => navigate('/coach/notes')} className="text-[9px] md:text-xs font-bold text-primary hover:text-primaryHover uppercase tracking-widest transition-colors flex items-center gap-1 group">TÜMÜ <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" /></button>
-              </div>
-              <div className="space-y-3 md:space-y-4">
-                 {appointments.slice(0, 3).map(app => (
-                   <div key={app.id} className="p-4 md:p-6 bg-slate-50 border border-slate-100 rounded-saas flex items-center justify-between group hover:bg-white hover:border-primary/30 hover:shadow-premium transition-all">
-                      <div className="flex items-center gap-4 md:gap-5 min-w-0">
-                         <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-success shadow-soft shrink-0">
-                            <Clock className="w-5 h-5 md:w-6 h-6" />
-                         </div>
-                         <div className="min-w-0">
-                            <div className="text-xs md:text-sm font-black text-textPrimary uppercase italic tracking-tight truncate">{app.studentName}</div>
-                            <div className="text-[8px] md:text-[10px] text-textSecondary font-bold uppercase opacity-60 truncate">{app.date} - {app.time}</div>
-                         </div>
-                      </div>
-                      {app.zoomLink && (
-                        <a href={app.zoomLink} target="_blank" rel="noopener noreferrer" className="p-3 md:p-4 bg-primary/10 text-primary rounded-xl hover:bg-primary hover:text-white transition-all shadow-soft shrink-0">
-                           <Video className="w-4 h-4 md:w-5 h-5" />
-                        </a>
-                      )}
-                   </div>
-                 ))}
-                 {appointments.length === 0 && (
-                   <div className="py-8 md:py-12 text-center text-textMuted font-bold uppercase text-[9px] md:text-[10px] opacity-40 tracking-[0.2em]">Randevu yok.</div>
-                 )}
-              </div>
-           </div>
-        </div>
-
       </div>
+
+      <Drawer open={!!drawer} onClose={() => setDrawer(null)} title={openCard?.drawerTitle || ''} icon={openCard?.icon || Users} iconColor={openCard?.drawerIconColor}>
+         {drawer === 'students' && students.map(s => (
+           <div key={s.id} onClick={() => { navigate(`/coach/students/${s.id}`); setDrawer(null); }} className="p-4 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-primary/40 flex items-center justify-between group">
+              <div className="text-sm font-bold text-slate-800">{s.name}</div>
+              <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-primary" />
+           </div>
+         ))}
+         {drawer === 'active' && students.filter(s => s.currentStatus?.isStudying).map(s => (
+           <div key={s.id} className={clsx("p-4 rounded-xl flex items-center justify-between", s.currentStatus?.timerMode === 'break' ? "bg-amber-50 border-amber-100" : "bg-emerald-50 border-emerald-100")}>
+              <div className={clsx("text-sm font-bold", s.currentStatus?.timerMode === 'break' ? "text-amber-800" : "text-emerald-800")}>
+                {s.name} 
+                <span className="text-[10px] block opacity-70">
+                  {s.currentStatus?.timerMode === 'break' ? '☕ MOLA' : `${s.currentStatus?.subject} - ${s.currentStatus?.topic}`}
+                </span>
+              </div>
+              <button onClick={() => handleSendWarning(s.id, s.name)} className="p-1.5 bg-white rounded shadow-sm text-amber-500"><AlertCircle className="w-4 h-4" /></button>
+           </div>
+         ))}
+      </Drawer>
     </div>
   );
 }

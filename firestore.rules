@@ -1,0 +1,164 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── YARDIMCI FONKSİYONLAR ───────────────────────────────────────────────
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+
+    function isCoach() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coach';
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super_admin', 'kurucu']);
+    }
+
+    function isCoachOrAdmin() {
+      return isCoach() || isAdmin();
+    }
+
+    function isStudentCoach(studentId) {
+      return isCoach() && (
+        get(/databases/$(database)/documents/students/$(studentId)).data.addedBy == request.auth.uid ||
+        get(/databases/$(database)/documents/students/$(studentId)).data.coachId == request.auth.uid
+      );
+    }
+
+    // ─── KULLANICI PROFİLLERİ ────────────────────────────────────────────────
+    match /users/{uid} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(uid) || isAdmin();
+    }
+
+    // ─── ÖĞRENCİLER ──────────────────────────────────────────────────────────
+    match /students/{studentId} {
+      allow read: if isAuthenticated() && (isOwner(studentId) || isStudentCoach(studentId) || isAdmin());
+      allow create: if isCoachOrAdmin() || (isAuthenticated() && request.auth.uid == studentId);
+      allow update: if isAuthenticated() && (isOwner(studentId) || isStudentCoach(studentId) || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // ─── HAFTALIK PLANLAR ─────────────────────────────────────────────────────
+    match /weeklyPlans/{docId} {
+      allow read: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid || isStudentCoach(resource.data.studentId) || isAdmin()
+      );
+      allow write: if isCoachOrAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ─── GÖREVLER ─────────────────────────────────────────────────────────────
+    match /tasks/{docId} {
+      allow read: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid || isStudentCoach(resource.data.studentId) || isAdmin()
+      );
+      allow create: if isCoachOrAdmin();
+      allow update: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid || isStudentCoach(resource.data.studentId) || isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // ─── DENEMELER ────────────────────────────────────────────────────────────
+    match /exams/{docId} {
+      allow read: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid || isCoachOrAdmin()
+      );
+      allow create: if isAuthenticated() && (
+        request.resource.data.studentId == request.auth.uid || isCoachOrAdmin()
+      );
+      allow update: if isCoachOrAdmin();
+      allow delete: if isCoachOrAdmin();
+    }
+
+    // ─── MESAJLAR ─────────────────────────────────────────────────────────────
+    match /messages/{msgId} {
+      // Sadece konuşmaya dahil olan kullanıcılar okuyabilir/yazabilir
+      allow read: if isAuthenticated() &&
+        request.auth.uid in resource.data.participants;
+      allow create: if isAuthenticated() &&
+        request.auth.uid in request.resource.data.participants;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // ─── BİLDİRİMLER ─────────────────────────────────────────────────────────
+    match /notifications/{docId} {
+      allow read: if isAuthenticated() && (
+        resource.data.toUid == request.auth.uid ||
+        resource.data.toStudentId == request.auth.uid ||
+        isCoachOrAdmin()
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        resource.data.toUid == request.auth.uid ||
+        resource.data.toStudentId == request.auth.uid
+      );
+      allow delete: if isCoachOrAdmin();
+    }
+
+    // ─── KÜTÜPHANE / KAYNAKLAR ───────────────────────────────────────────────
+    match /library/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isCoachOrAdmin();
+    }
+
+    // ─── BLOG ────────────────────────────────────────────────────────────────
+    match /blogPosts/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ─── SİSTEM AYARLARI ─────────────────────────────────────────────────────
+    match /settings/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ─── ÇALIŞMA OTURUMLARI ───────────────────────────────────────────────────
+    match /studySessions/{docId} {
+      allow read: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid || isCoachOrAdmin()
+      );
+      allow write: if isAuthenticated() && (
+        request.resource.data.studentId == request.auth.uid || isCoachOrAdmin()
+      );
+    }
+    // ─── DENEME ANALİZLERİ ────────────────────────────────────────────────────
+    match /examAnalyses/{docId} {
+      // Öğrenci kendi analizini okur/yazar; koç ve admin tümünü okur
+      allow read: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid || isCoachOrAdmin()
+      );
+      allow create: if isAuthenticated() &&
+        request.resource.data.studentId == request.auth.uid;
+      allow update: if false;
+      allow delete: if isAuthenticated() &&
+        resource.data.studentId == request.auth.uid || isAdmin();
+    }
+
+    // ─── ÇALIŞMA SEANSLARI (RADAR) ───────────────────────────────────────────
+    match /studySessions/{docId} {
+      allow read: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid || isCoachOrAdmin()
+      );
+      allow create: if isAuthenticated() &&
+        request.resource.data.studentId == request.auth.uid;
+      allow update: if false;
+      allow delete: if isAuthenticated() &&
+        resource.data.studentId == request.auth.uid || isAdmin();
+    }
+
+  }
+}

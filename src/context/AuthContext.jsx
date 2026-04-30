@@ -3,16 +3,48 @@ import { auth, db } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 export function useAuth() {
   return useContext(AuthContext);
 }
 
+/**
+ * Bir öğrencinin Premium (VIP) erişimi olup olmadığını hesaplar.
+ * Kurallar:
+ *  1. isVIP: true  → Her zaman erişim var
+ *  2. plan === 'coach_managed' → Koç aktifse erişim var
+ *  3. plan === 'trial' ve trialEndsAt gelecekte → Deneme süresinde, erişim var
+ *  4. plan === 'premium' → Ödeme yapılmış, erişim var
+ *  5. Diğer → Free, kısıtlı erişim
+ */
+function computeIsVIP(data) {
+  if (!data) return false;
+  if (data.isVIP === true) return true;
+  if (data.plan === 'coach_managed') return true;
+  if (data.plan === 'premium') return true;
+  if (data.plan === 'trial' && data.trialEndsAt) {
+    return new Date(data.trialEndsAt) > new Date();
+  }
+  return false;
+}
+
+/**
+ * Deneme süresinde kaç gün kaldığını döner. Deneme yoksa null döner.
+ */
+function computeTrialDaysLeft(data) {
+  if (!data || data.plan !== 'trial' || !data.trialEndsAt) return null;
+  const diff = new Date(data.trialEndsAt) - new Date();
+  if (diff <= 0) return 0;
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
-  const [userRole, setUserRole] = useState(null); 
+  const [userRole, setUserRole] = useState(null);
   const [userData, setUserData] = useState(null);
+  const [isVIP, setIsVIP] = useState(false);
+  const [trialDaysLeft, setTrialDaysLeft] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,36 +53,58 @@ export function AuthProvider({ children }) {
       if (user) {
         setCurrentUser(user);
         try {
-          // Önce 'users' (Admin/Koç) koleksiyonuna bak
+          // Önce 'users' koleksiyonuna bak
           const userRef = doc(db, 'users', user.uid);
           const userSnap = await getDoc(userRef);
-          
+
           if (userSnap.exists()) {
             const data = userSnap.data();
-            setUserRole(data.role);
-            setUserData(data);
+            // Eğer koç/admin ise isVIP hesaplamayı geç
+            if (['coach', 'admin', 'super_admin', 'kurucu'].includes(data.role)) {
+              setUserRole(data.role);
+              setUserData({ ...data, isVIP: true });
+              setIsVIP(true);
+              setTrialDaysLeft(null);
+            } else {
+              // Student'ın detay verisini students koleksiyonundan al
+              const studentRef = doc(db, 'students', user.uid);
+              const studentSnap = await getDoc(studentRef);
+              const studentData = studentSnap.exists()
+                ? { ...studentSnap.data(), role: 'student' }
+                : { ...data, role: 'student' };
+              setUserRole('student');
+              setUserData(studentData);
+              setIsVIP(computeIsVIP(studentData));
+              setTrialDaysLeft(computeTrialDaysLeft(studentData));
+            }
           } else {
-            // Eğer orada yoksa 'students' (Öğrenci) koleksiyonuna bak
+            // Sadece students koleksiyonunda var
             const studentRef = doc(db, 'students', user.uid);
             const studentSnap = await getDoc(studentRef);
-            
             if (studentSnap.exists()) {
+              const studentData = { ...studentSnap.data(), role: 'student' };
               setUserRole('student');
-              setUserData(studentSnap.data());
+              setUserData(studentData);
+              setIsVIP(computeIsVIP(studentData));
+              setTrialDaysLeft(computeTrialDaysLeft(studentData));
             } else {
-              // HİÇBİR YERDE YOKSA BİLE (Yeni giriş) varsayılan olarak student kabul et (Döngüyü kır!)
               setUserRole('student');
               setUserData({ id: user.uid, email: user.email });
+              setIsVIP(false);
+              setTrialDaysLeft(null);
             }
           }
         } catch (error) {
-          console.error('Veri çekilirken hata (Fallback devreye girdi):', error);
-          setUserRole('student'); // Hata durumunda bile döngüye girmemesi için rol ver
+          console.error('Auth context error:', error);
+          setUserRole('student');
+          setIsVIP(false);
         }
       } else {
         setCurrentUser(null);
         setUserRole(null);
         setUserData(null);
+        setIsVIP(false);
+        setTrialDaysLeft(null);
       }
       setLoading(false);
     });
@@ -62,6 +116,8 @@ export function AuthProvider({ children }) {
     currentUser,
     userRole,
     userData,
+    isVIP,
+    trialDaysLeft,
     loading
   };
 
